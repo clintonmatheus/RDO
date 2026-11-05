@@ -5,6 +5,7 @@ import { dataLocal } from './src/domain/datas';
 import { RepositorioFotosSqlite, RepositorioRegistrosSqlite } from './src/storage/sqlite';
 import { abrirBancoDoApp } from './src/storage/expo';
 import type { RepositorioFotos, RepositorioRegistros } from './src/storage/contrato';
+import { gerarPdfSemanal } from './src/diarios/expo';
 import { servicoFotosDoApp } from './src/fotos/expo';
 import { Raiz } from './src/telas/Raiz';
 
@@ -15,7 +16,7 @@ export default function App() {
   }, []);
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      {repo ? <Raiz repositorio={repo.registros} fotos={repo.fotos} servicoFotos={servicoFotosDoApp} hoje={dataLocal(new Date().toISOString())} /> : <ActivityIndicator style={{ flex: 1 }} />}
+      {repo ? <Raiz repositorio={repo.registros} fotos={repo.fotos} servicoFotos={servicoFotosDoApp} gerarPdf={gerarPdfSemanal} hoje={dataLocal(new Date().toISOString())} /> : <ActivityIndicator style={{ flex: 1 }} />}
       <StatusBar style="auto" />
     </SafeAreaView>
   );

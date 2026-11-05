@@ -13,7 +13,7 @@ async function abrir(onAbrir = jest.fn()) {
   await registros.salvar(criarRegistroDiario({ obraId: obra.id, data: '2026-11-04', efetivo: { Servente: 2 } }));
   await registros.salvar(criarRegistroDiario({ obraId: obra.id, data: '2026-11-03', semExpediente: 'Chuva' }));
   await fotos.salvar(criarFoto({ id: 'f1', obraId: obra.id, uri: 'u', origem: 'camera', capturadaEm: '2026-11-04T15:00:00.000Z' }));
-  await render(<DiasObraTela obra={obra} hoje="2026-11-05" registros={registros} fotos={fotos} onAbrir={onAbrir} onVoltar={() => {}} />);
+  await render(<DiasObraTela obra={obra} hoje="2026-11-05" registros={registros} fotos={fotos} gerarPdf={async () => {}} onAbrir={onAbrir} onVoltar={() => {}} />);
   return onAbrir;
 }
 
@@ -37,5 +37,31 @@ describe('DiasObraTela', () => {
     const onAbrir = await abrir();
     await fireEvent.press(await screen.findByTestId('dia-2026-11-04'));
     expect(onAbrir).toHaveBeenCalledWith('2026-11-04');
+  });
+});
+
+describe('DiasObraTela — diário semanal', () => {
+  const ubs = OBRAS_INICIAIS.find((o) => o.id === 'ubs')!;
+
+  async function abrirObra(o: typeof ubs, gerarPdf = jest.fn(async () => {})) {
+    await render(
+      <DiasObraTela obra={o} hoje="2026-11-05" registros={new RepositorioRegistrosMemoria()} fotos={new RepositorioFotosMemoria()}
+        gerarPdf={gerarPdf} onAbrir={() => {}} onVoltar={() => {}} />,
+    );
+    return gerarPdf;
+  }
+
+  it('gera o PDF da semana atual em obra de diário semanal', async () => {
+    const gerar = await abrirObra(ubs);
+    await fireEvent.press(await screen.findByTestId('gerar-semanal'));
+    expect(gerar).toHaveBeenCalledTimes(1);
+    const diario = (gerar.mock.calls[0] as any[])[0];
+    expect(diario.periodo).toEqual({ inicio: '2026-10-31', fim: '2026-11-06' });
+  });
+
+  it('não oferece o botão em obra de diário diário', async () => {
+    await abrirObra(OBRAS_INICIAIS[0]);
+    await screen.findAllByTestId('dia-item');
+    expect(screen.queryByTestId('gerar-semanal')).toBeNull();
   });
 });

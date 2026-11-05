@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { OBRAS_INICIAIS, type Obra } from '../domain/obras';
+import type { DiarioSemanal } from '../diarios/semanal';
 import type { ServicoFotos } from '../fotos/servico';
 import type { RepositorioFotos, RepositorioRegistros } from '../storage/contrato';
 import { DiasObraTela } from './DiasObraTela';
@@ -11,15 +12,16 @@ interface Props {
   fotos: RepositorioFotos;
   servicoFotos: ServicoFotos;
   hoje: string;
+  gerarPdf: (diario: DiarioSemanal) => Promise<void>;
 }
 
 /** Navegação mínima por estado: obras → dias da obra → registro do dia. */
-export function Raiz({ repositorio, fotos, servicoFotos, hoje }: Props) {
+export function Raiz({ repositorio, fotos, servicoFotos, hoje, gerarPdf }: Props) {
   const [obra, setObra] = useState<Obra>();
   const [dia, setDia] = useState<string>();
   if (!obra) return <ListaObrasTela obras={OBRAS_INICIAIS} onAbrir={setObra} />;
   if (!dia) {
-    return <DiasObraTela obra={obra} hoje={hoje} registros={repositorio} fotos={fotos} onAbrir={setDia} onVoltar={() => setObra(undefined)} />;
+    return <DiasObraTela obra={obra} hoje={hoje} registros={repositorio} fotos={fotos} gerarPdf={gerarPdf} onAbrir={setDia} onVoltar={() => setObra(undefined)} />;
   }
   return (
     <RegistroDiaTela obra={obra} data={dia} hoje={hoje} repositorio={repositorio} fotos={fotos}
