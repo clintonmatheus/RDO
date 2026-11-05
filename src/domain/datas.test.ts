@@ -40,3 +40,9 @@ describe('dataLocal', () => {
     expect(dataLocal('2026-08-10T03:00:00.000Z')).toBe('2026-08-10');
   });
 });
+
+import { formatarDataBR } from './datas';
+describe('formatarDataBR', () => {
+  it('formata em dd/mm/aaaa', () => expect(formatarDataBR('2026-11-05')).toBe('05/11/2026'));
+  it('rejeita data inválida', () => expect(() => formatarDataBR('2026-13-01')).toThrow('Data inválida'));
+});

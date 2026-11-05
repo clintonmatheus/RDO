@@ -46,3 +46,10 @@ export function dataLocal(instante: string, offsetMin: number = FUSO_NATAL_MIN):
   if (Number.isNaN(t)) throw new Error('Data inválida');
   return formatar(t + offsetMin * 60_000);
 }
+
+/** "2026-11-05" → "05/11/2026" */
+export function formatarDataBR(data: string): string {
+  diaDaSemana(data); // valida
+  const [a, m, d] = data.split('-');
+  return `${d}/${m}/${a}`;
+}

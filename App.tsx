@@ -1,20 +1,21 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, SafeAreaView } from 'react-native';
+import { dataLocal } from './src/domain/datas';
+import { RepositorioRegistrosSqlite } from './src/storage/sqlite';
+import { abrirBancoDoApp } from './src/storage/expo';
+import type { RepositorioRegistros } from './src/storage/contrato';
+import { Raiz } from './src/telas/Raiz';
 
 export default function App() {
+  const [repo, setRepo] = useState<RepositorioRegistros>();
+  useEffect(() => {
+    abrirBancoDoApp().then((b) => setRepo(new RepositorioRegistrosSqlite(b)));
+  }, []);
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      {repo ? <Raiz repositorio={repo} hoje={dataLocal(new Date().toISOString())} /> : <ActivityIndicator style={{ flex: 1 }} />}
       <StatusBar style="auto" />
-    </View>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
