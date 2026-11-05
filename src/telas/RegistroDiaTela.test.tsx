@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { RegistroDiaTela } from './RegistroDiaTela';
-import { RepositorioRegistrosMemoria } from '../storage/memoria';
+import { RepositorioFotosMemoria, RepositorioRegistrosMemoria } from '../storage/memoria';
 import { criarRegistroDiario } from '../domain/registro';
 import { OBRAS_INICIAIS } from '../domain/obras';
 
@@ -9,7 +9,8 @@ const data = '2026-11-05';
 
 async function abrir(repo = new RepositorioRegistrosMemoria()) {
   const onVoltar = jest.fn();
-  await render(<RegistroDiaTela obra={obra} data={data} repositorio={repo} onVoltar={onVoltar} />);
+  await render(<RegistroDiaTela obra={obra} data={data} hoje={data} repositorio={repo} fotos={new RepositorioFotosMemoria()}
+    servicoFotos={{ tirarFoto: async () => undefined, escolherDaGaleria: async () => undefined }} onVoltar={onVoltar} />);
   return { repo, onVoltar };
 }
 

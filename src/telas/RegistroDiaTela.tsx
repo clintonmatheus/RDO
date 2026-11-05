@@ -1,18 +1,25 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { formatarDataBR } from '../domain/datas';
 import type { Obra } from '../domain/obras';
 import {
   criarRegistroDiario, EFETIVO_VAZIO, EQUIPAMENTOS, EQUIPAMENTOS_VAZIO, FUNCOES, RITMOS,
   totalEfetivo, type Equipamento, type Funcao, type Ritmo,
 } from '../domain/registro';
-import type { RepositorioRegistros } from '../storage/contrato';
+import { criarFoto, type Foto } from '../domain/foto';
+import type { ServicoFotos } from '../fotos/servico';
+import { novoId } from '../fotos/id';
+import type { RepositorioFotos, RepositorioRegistros } from '../storage/contrato';
 import { estilos } from './estilos';
 
 interface Props {
   obra: Obra;
   data: string;
+  /** Dia de hoje (AAAA-MM-DD): a câmera só é oferecida nele. */
+  hoje: string;
   repositorio: RepositorioRegistros;
+  fotos: RepositorioFotos;
+  servicoFotos: ServicoFotos;
   onVoltar: () => void;
 }
 
@@ -31,7 +38,7 @@ function Contador({ nome, valor, onMudar }: { nome: string; valor: number; onMud
   );
 }
 
-export function RegistroDiaTela({ obra, data, repositorio, onVoltar }: Props) {
+export function RegistroDiaTela({ obra, data, hoje, repositorio, fotos, servicoFotos, onVoltar }: Props) {
   const [efetivo, setEfetivo] = useState<Record<Funcao, number>>({ ...EFETIVO_VAZIO });
   const [equip, setEquip] = useState<Record<Equipamento, number>>({ ...EQUIPAMENTOS_VAZIO });
   const [ritmo, setRitmo] = useState<Ritmo>('normal');
@@ -39,6 +46,29 @@ export function RegistroDiaTela({ obra, data, repositorio, onVoltar }: Props) {
   const [semExpediente, setSemExpediente] = useState(false);
   const [motivo, setMotivo] = useState('');
   const [erro, setErro] = useState<string>();
+  const [lista, setLista] = useState<Foto[]>([]);
+
+  useEffect(() => {
+    let ativo = true;
+    fotos.listarPorDia(obra.id, data).then((l) => ativo && setLista(l));
+    return () => { ativo = false; };
+  }, [fotos, obra.id, data]);
+
+  async function adicionar(origem: 'camera' | 'galeria') {
+    const f = await (origem === 'camera' ? servicoFotos.tirarFoto() : servicoFotos.escolherDaGaleria());
+    if (!f) return;
+    const nova = criarFoto({
+      id: novoId(), obraId: obra.id, uri: f.uri, origem, capturadaEm: f.capturadaEm,
+      dataManual: origem === 'galeria' ? data : undefined,
+    });
+    await fotos.salvar(nova);
+    setLista(await fotos.listarPorDia(obra.id, data));
+  }
+
+  async function remover(id: string) {
+    await fotos.remover(id);
+    setLista(await fotos.listarPorDia(obra.id, data));
+  }
 
   useEffect(() => {
     let ativo = true;
@@ -113,6 +143,26 @@ export function RegistroDiaTela({ obra, data, repositorio, onVoltar }: Props) {
 
       <Text style={estilos.secao}>Anotações (uma por linha)</Text>
       <TextInput testID="anotacoes" style={[estilos.entrada, { minHeight: 120 }]} multiline value={texto} onChangeText={setTexto} placeholder="Serviços executados, ocorrências…" />
+
+      <Text style={estilos.secao}>Fotos</Text>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {data === hoje && (
+          <Pressable testID="tirar-foto" style={estilos.chip} onPress={() => adicionar('camera')}>
+            <Text style={{ color: '#1f4e79' }}>Tirar foto</Text>
+          </Pressable>
+        )}
+        <Pressable testID="foto-galeria" style={estilos.chip} onPress={() => adicionar('galeria')}>
+          <Text style={{ color: '#1f4e79' }}>Galeria</Text>
+        </Pressable>
+      </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {lista.map((f) => (
+          <View key={f.id} testID="foto-item">
+            <Image source={{ uri: f.uri }} style={{ width: 100, height: 100, borderRadius: 8 }} />
+            <Pressable testID="remover-foto" onPress={() => remover(f.id)}><Text style={estilos.erro}>Remover</Text></Pressable>
+          </View>
+        ))}
+      </View>
 
       {erro && <Text style={estilos.erro}>{erro}</Text>}
       <Pressable testID="salvar" style={estilos.botao} onPress={salvar}>
