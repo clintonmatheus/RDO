@@ -106,3 +106,61 @@ describe('DiasObraTela — diário mensal do CBTU', () => {
     expect(screen.queryByTestId('gerar-mensal')).toBeNull();
   });
 });
+
+describe('DiasObraTela — escolha de período', () => {
+  const cbtuObra = OBRAS_INICIAIS[0];
+  const ubsObra = OBRAS_INICIAIS[1];
+
+  async function abrirObra(o: typeof cbtuObra, gerarPdf = jest.fn(async () => {})) {
+    await render(
+      <DiasObraTela obra={o} hoje="2026-11-05" registros={new RepositorioRegistrosMemoria()} fotos={new RepositorioFotosMemoria()}
+        gerarPdf={gerarPdf} onAbrir={() => {}} onVoltar={() => {}} />,
+    );
+    return gerarPdf;
+  }
+  const periodoGerado = (g: jest.Mock) => (g.mock.calls[0] as any[])[0].periodo;
+
+  it('CBTU: período inicia no mês atual', async () => {
+    await abrirObra(cbtuObra);
+    expect((await screen.findByTestId('periodo-de')).props.value).toBe('01/11/2026');
+    expect(screen.getByTestId('periodo-ate').props.value).toBe('30/11/2026');
+  });
+
+  it('CBTU: botão anterior gera o mês anterior', async () => {
+    const g = await abrirObra(cbtuObra);
+    await fireEvent.press(await screen.findByTestId('periodo-anterior'));
+    expect(screen.getByTestId('periodo-de').props.value).toBe('01/10/2026');
+    await fireEvent.press(screen.getByTestId('gerar-mensal'));
+    expect(periodoGerado(g)).toEqual({ inicio: '2026-10-01', fim: '2026-10-31' });
+  });
+
+  it('CBTU: período personalizado de medição', async () => {
+    const g = await abrirObra(cbtuObra);
+    await fireEvent.changeText(await screen.findByTestId('periodo-de'), '27/06/2026');
+    await fireEvent.changeText(screen.getByTestId('periodo-ate'), '31/08/2026');
+    await fireEvent.press(screen.getByTestId('gerar-mensal'));
+    expect(periodoGerado(g)).toEqual({ inicio: '2026-06-27', fim: '2026-08-31' });
+  });
+
+  it('CBTU: data inválida ou período invertido não gera PDF', async () => {
+    const g = await abrirObra(cbtuObra);
+    await fireEvent.changeText(await screen.findByTestId('periodo-de'), 'abc');
+    await fireEvent.press(screen.getByTestId('gerar-mensal'));
+    expect(screen.getByText('Data inválida')).toBeTruthy();
+    await fireEvent.changeText(screen.getByTestId('periodo-de'), '10/11/2026');
+    await fireEvent.changeText(screen.getByTestId('periodo-ate'), '01/11/2026');
+    await fireEvent.press(screen.getByTestId('gerar-mensal'));
+    expect(screen.getByText('Período inválido')).toBeTruthy();
+    expect(g).not.toHaveBeenCalled();
+  });
+
+  it('semanal: navega entre semanas e gera a semana mostrada', async () => {
+    const g = await abrirObra(ubsObra);
+    expect(await screen.findByTestId('periodo-rotulo')).toHaveTextContent('31/10/2026 a 06/11/2026');
+    await fireEvent.press(screen.getByTestId('periodo-anterior'));
+    expect(screen.getByTestId('periodo-rotulo')).toHaveTextContent('24/10/2026 a 30/10/2026');
+    await fireEvent.press(screen.getByTestId('gerar-semanal'));
+    expect(periodoGerado(g)).toEqual({ inicio: '2026-10-24', fim: '2026-10-30' });
+    expect(screen.queryByTestId('periodo-de')).toBeNull();
+  });
+});

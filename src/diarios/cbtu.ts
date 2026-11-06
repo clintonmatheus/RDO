@@ -1,4 +1,4 @@
-import { formatarDataBR, periodoDoMes } from '../domain/datas';
+import { formatarDataBR, periodoDoMes, type Periodo } from '../domain/datas';
 import type { Foto } from '../domain/foto';
 import type { Obra } from '../domain/obras';
 import { FUNCOES, type RegistroDiario } from '../domain/registro';
@@ -7,10 +7,18 @@ import { esc, montarDias, type DiarioSemanal } from './semanal';
 /** Diário de período contínuo (mês) da obra do CBTU. */
 export type DiarioMensal = DiarioSemanal;
 
-export function montarDiarioMensal(obra: Obra, dataNoMes: string, registros: RegistroDiario[], fotos: Foto[]): DiarioMensal {
+const MAX_DIAS = 400;
+
+/** Diário do CBTU para um período livre (mês, medição etc.). */
+export function montarDiarioCbtu(obra: Obra, periodo: Periodo, registros: RegistroDiario[], fotos: Foto[]): DiarioMensal {
   if (!obra.controlaEfetivo) throw new Error('Obra sem diário diário');
-  const periodo = periodoDoMes(dataNoMes);
+  if (periodo.inicio > periodo.fim) throw new Error('Período inválido');
+  if (Date.parse(periodo.fim) - Date.parse(periodo.inicio) > MAX_DIAS * 86_400_000) throw new Error('Período muito longo');
   return { obra, periodo, dias: montarDias(obra, periodo, registros, fotos) };
+}
+
+export function montarDiarioMensal(obra: Obra, dataNoMes: string, registros: RegistroDiario[], fotos: Foto[]): DiarioMensal {
+  return montarDiarioCbtu(obra, periodoDoMes(dataNoMes), registros, fotos);
 }
 
 export function diarioCbtuHtml(diario: DiarioMensal, srcDaFoto: (f: Foto) => string): string {

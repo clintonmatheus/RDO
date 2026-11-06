@@ -1,5 +1,6 @@
 import { FlatList, Pressable, Text, View } from 'react-native';
 import type { Obra } from '../domain/obras';
+import { Cabecalho } from './Cabecalho';
 import { estilos } from './estilos';
 
 interface Props {
@@ -10,15 +11,16 @@ interface Props {
 export function ListaObrasTela({ obras, onAbrir }: Props) {
   return (
     <View style={estilos.tela}>
+      <Cabecalho logo titulo="Obras" subtitulo="Diário de obra" />
       <FlatList
         contentContainerStyle={estilos.conteudo}
         data={obras}
         keyExtractor={(o) => o.id}
-        ListHeaderComponent={<Text style={estilos.titulo}>Obras</Text>}
         renderItem={({ item }) => (
           <Pressable testID="obra-item" style={estilos.card} onPress={() => onAbrir(item)}>
+            <Text style={estilos.etiqueta}>{item.orgao}</Text>
             <Text style={estilos.titulo}>{item.nome}</Text>
-            <Text style={estilos.subtitulo}>{`${item.orgao} · Contrato ${item.contrato}`}</Text>
+            <Text style={estilos.subtitulo}>{`Contrato ${item.contrato} · ${item.local}`}</Text>
           </Pressable>
         )}
       />

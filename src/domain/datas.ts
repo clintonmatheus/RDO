@@ -68,3 +68,27 @@ export function periodoDoMes(data: string): { inicio: string; fim: string } {
   const proximo = m === 12 ? `${a + 1}-01-01` : `${a}-${String(m + 1).padStart(2, '0')}-01`;
   return { inicio, fim: adicionarDias(proximo, -1) };
 }
+
+/** "27/06/2026" (ou "5/7/2026") → "2026-06-27". Lança 'Data inválida' se não existir. */
+export function analisarDataBR(texto: string): string {
+  const m = texto.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) throw new Error('Data inválida');
+  const iso = `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  const t = Date.parse(`${iso}T00:00:00Z`);
+  if (Number.isNaN(t) || new Date(t).toISOString().slice(0, 10) !== iso) throw new Error('Data inválida');
+  return iso;
+}
+
+export interface Periodo { inicio: string; fim: string }
+
+export function periodoMesAnterior(p: Periodo): Periodo {
+  return periodoDoMes(adicionarDias(p.inicio, -1));
+}
+
+export function periodoMesSeguinte(p: Periodo): Periodo {
+  return periodoDoMes(adicionarDias(p.fim, 1));
+}
+
+export function deslocarPeriodo(p: Periodo, dias: number): Periodo {
+  return { inicio: adicionarDias(p.inicio, dias), fim: adicionarDias(p.fim, dias) };
+}

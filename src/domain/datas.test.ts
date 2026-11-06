@@ -69,3 +69,28 @@ describe('periodoDoMes', () => {
     expect(periodoDoMes('2026-02-10').fim).toBe('2026-02-28');
   });
 });
+
+import { analisarDataBR, periodoMesAnterior, periodoMesSeguinte, deslocarPeriodo } from './datas';
+describe('analisarDataBR', () => {
+  it('converte dd/mm/aaaa para ISO', () => {
+    expect(analisarDataBR('27/06/2026')).toBe('2026-06-27');
+    expect(analisarDataBR(' 5/7/2026 ')).toBe('2026-07-05');
+  });
+  it('rejeita formatos e datas inexistentes', () => {
+    for (const x of ['', 'abc', '2026-06-27', '31/02/2026', '32/01/2026', '10/13/2026', '1/1/26']) {
+      expect(() => analisarDataBR(x)).toThrow('Data inválida');
+    }
+  });
+});
+
+describe('navegação de período', () => {
+  it('mês anterior e seguinte', () => {
+    const nov = { inicio: '2026-11-01', fim: '2026-11-30' };
+    expect(periodoMesAnterior(nov)).toEqual({ inicio: '2026-10-01', fim: '2026-10-31' });
+    expect(periodoMesSeguinte(nov)).toEqual({ inicio: '2026-12-01', fim: '2026-12-31' });
+    expect(periodoMesSeguinte({ inicio: '2026-12-01', fim: '2026-12-31' })).toEqual({ inicio: '2027-01-01', fim: '2027-01-31' });
+  });
+  it('desloca período em dias', () => {
+    expect(deslocarPeriodo({ inicio: '2026-10-31', fim: '2026-11-06' }, -7)).toEqual({ inicio: '2026-10-24', fim: '2026-10-30' });
+  });
+});

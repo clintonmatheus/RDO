@@ -30,3 +30,9 @@ React Native + Expo + TypeScript. Desenvolvimento orientado a testes (TDD) com J
 - Fotos: câmera (só no dia de hoje, data confiável) e galeria (pertence ao dia aberto; data original guardada).
 - Diário semanal em PDF (UBS, CAPS III, USF Rocas) com fotos do período; compartilhável pela folha do iOS.
 - Dados offline em SQLite no aparelho. Sincronização com OneDrive: fase futura.
+
+## Atualizações recentes
+
+- Diário do CBTU em PDF (paisagem) para qualquer período: mês atual, mês anterior/seguinte ou datas livres (ex.: período de medição).
+- Diário semanal SEINFRA com navegação entre semanas.
+- Identidade visual: cabeçalho grafite com logomarca do Grupo Passos, ícone do app e cartões com cores de status.

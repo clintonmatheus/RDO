@@ -80,3 +80,16 @@ describe('diarioCbtuHtml', () => {
     expect(sem).not.toContain('Registro fotográfico');
   });
 });
+
+import { montarDiarioCbtu } from './cbtu';
+describe('montarDiarioCbtu (período livre)', () => {
+  it('cobre um período de medição', () => {
+    const d = montarDiarioCbtu(cbtu, { inicio: '2026-06-27', fim: '2026-08-31' }, [], []);
+    expect(d.dias).toHaveLength(66);
+    expect(d.dias[0].data).toBe('2026-06-27');
+  });
+  it('rejeita período invertido ou longo demais', () => {
+    expect(() => montarDiarioCbtu(cbtu, { inicio: '2026-08-31', fim: '2026-06-27' }, [], [])).toThrow('Período inválido');
+    expect(() => montarDiarioCbtu(cbtu, { inicio: '2025-01-01', fim: '2026-12-31' }, [], [])).toThrow('Período muito longo');
+  });
+});

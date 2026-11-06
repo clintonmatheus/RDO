@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { formatarDataBR, motivoPadraoSemExpediente } from '../domain/datas';
+import { diaDaSemana, formatarDataBR, motivoPadraoSemExpediente } from '../domain/datas';
 import type { Obra } from '../domain/obras';
 import {
   criarRegistroDiario, EFETIVO_VAZIO, EQUIPAMENTOS, EQUIPAMENTOS_VAZIO, FUNCOES, RITMOS,
@@ -10,6 +10,7 @@ import { criarFoto, type Foto } from '../domain/foto';
 import type { ServicoFotos } from '../fotos/servico';
 import { novoId } from '../fotos/id';
 import type { RepositorioFotos, RepositorioRegistros } from '../storage/contrato';
+import { Cabecalho } from './Cabecalho';
 import { estilos } from './estilos';
 
 interface Props {
@@ -26,9 +27,9 @@ interface Props {
 function Contador({ nome, valor, onMudar }: { nome: string; valor: number; onMudar: (v: number) => void }) {
   return (
     <View style={estilos.linha}>
-      <Text style={{ flex: 1, fontSize: 16 }}>{nome}</Text>
-      <Pressable testID={`menos-${nome}`} style={estilos.passo} onPress={() => onMudar(Math.max(0, valor - 1))}>
-        <Text style={estilos.passoTexto}>−</Text>
+      <Text style={{ flex: 1, fontSize: 16, color: '#1C1C1E' }}>{nome}</Text>
+      <Pressable testID={`menos-${nome}`} style={[estilos.passo, estilos.passoSec]} onPress={() => onMudar(Math.max(0, valor - 1))}>
+        <Text style={[estilos.passoTexto, estilos.passoTextoSec]}>−</Text>
       </Pressable>
       <Text testID={`qtd-${nome}`} style={estilos.qtd}>{String(valor)}</Text>
       <Pressable testID={`mais-${nome}`} style={estilos.passo} onPress={() => onMudar(valor + 1)}>
@@ -103,14 +104,16 @@ export function RegistroDiaTela({ obra, data, hoje, repositorio, fotos, servicoF
   }
 
   return (
+    <View style={estilos.tela}>
+    <Cabecalho titulo={obra.nome} rotuloVoltar="Dias" onVoltar={onVoltar}>
+      <Text style={estilos.cabecalhoSub}>{diaDaSemana(data)}</Text>
+      <Text style={estilos.cabecalhoTitulo}>{formatarDataBR(data)}</Text>
+    </Cabecalho>
     <ScrollView style={estilos.tela} contentContainerStyle={[estilos.conteudo, { paddingBottom: 48 }]}
       keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets>
-      <Pressable testID="voltar" onPress={onVoltar}><Text style={estilos.subtitulo}>‹ Obras</Text></Pressable>
-      <Text style={estilos.titulo}>{obra.nome}</Text>
-      <Text style={estilos.subtitulo}>{formatarDataBR(data)}</Text>
 
-      <Pressable testID="sem-expediente" style={[estilos.chip, semExpediente && estilos.chipAtivo]} onPress={() => setSemExpediente(!semExpediente)}>
-        <Text style={{ color: semExpediente ? '#fff' : '#1f4e79' }}>Dia sem expediente</Text>
+      <Pressable testID="sem-expediente" style={[estilos.chip, { alignSelf: 'flex-start' }, semExpediente && estilos.chipAtivo]} onPress={() => setSemExpediente(!semExpediente)}>
+        <Text style={semExpediente ? estilos.chipTextoAtivo : estilos.chipTexto}>Dia sem expediente</Text>
       </Pressable>
       {semExpediente && (
         <TextInput testID="motivo" style={estilos.entrada} placeholder="Motivo (ex.: chuva, feriado)" value={motivo} onChangeText={setMotivo} />
@@ -141,7 +144,7 @@ export function RegistroDiaTela({ obra, data, hoje, repositorio, fotos, servicoF
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {RITMOS.map((r) => (
               <Pressable key={r} testID={`ritmo-${r}`} style={[estilos.chip, ritmo === r && estilos.chipAtivo]} onPress={() => setRitmo(r)}>
-                <Text style={{ color: ritmo === r ? '#fff' : '#1f4e79' }}>{r}</Text>
+                <Text style={ritmo === r ? estilos.chipTextoAtivo : estilos.chipTexto}>{r}</Text>
               </Pressable>
             ))}
           </View>
@@ -155,11 +158,11 @@ export function RegistroDiaTela({ obra, data, hoje, repositorio, fotos, servicoF
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {data === hoje && (
           <Pressable testID="tirar-foto" style={estilos.chip} onPress={() => adicionar('camera')}>
-            <Text style={{ color: '#1f4e79' }}>Tirar foto</Text>
+            <Text style={estilos.chipTexto}>Tirar foto</Text>
           </Pressable>
         )}
         <Pressable testID="foto-galeria" style={estilos.chip} onPress={() => adicionar('galeria')}>
-          <Text style={{ color: '#1f4e79' }}>Galeria</Text>
+          <Text style={estilos.chipTexto}>Galeria</Text>
         </Pressable>
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -176,5 +179,6 @@ export function RegistroDiaTela({ obra, data, hoje, repositorio, fotos, servicoF
         <Text style={estilos.botaoTexto}>Salvar registro</Text>
       </Pressable>
     </ScrollView>
+    </View>
   );
 }

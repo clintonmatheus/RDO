@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, SafeAreaView } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { dataLocal } from './src/domain/datas';
 import { RepositorioFotosSqlite, RepositorioRegistrosSqlite } from './src/storage/sqlite';
 import { abrirBancoDoApp } from './src/storage/expo';
@@ -15,9 +16,12 @@ export default function App() {
     abrirBancoDoApp().then((b) => setRepo({ registros: new RepositorioRegistrosSqlite(b), fotos: new RepositorioFotosSqlite(b) }));
   }, []);
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaProvider>
+    <View style={{ flex: 1, backgroundColor: '#F2F3F5' }}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: '#2B2B2B' }} />
       {repo ? <Raiz repositorio={repo.registros} fotos={repo.fotos} servicoFotos={servicoFotosDoApp} gerarPdf={gerarPdfSemanal} hoje={dataLocal(new Date().toISOString())} /> : <ActivityIndicator style={{ flex: 1 }} />}
-      <StatusBar style="auto" />
-    </SafeAreaView>
+      <StatusBar style="light" />
+    </View>
+    </SafeAreaProvider>
   );
 }
