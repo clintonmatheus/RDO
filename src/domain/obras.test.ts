@@ -19,7 +19,7 @@ describe('obras iniciais', () => {
       const o = obterObra(id);
       expect(o.tipoDiario).toBe('semanal');
       expect(o.inicioSemana).toBe('sabado');
-      expect(o.orgao).toBe('SEMOV');
+      expect(o.orgao).toBe('SEINFRA');
     }
   });
 
@@ -31,5 +31,11 @@ describe('obras iniciais', () => {
 
   it('lança erro para obra inexistente', () => {
     expect(() => obterObra('nao-existe')).toThrow('Obra não encontrada');
+  });
+});
+
+describe('controle de efetivo', () => {
+  it('só a obra do CBTU controla efetivo, equipamentos e ritmo', () => {
+    expect(OBRAS_INICIAIS.filter((o) => o.controlaEfetivo).map((o) => o.id)).toEqual(['cbtu-barauna']);
   });
 });

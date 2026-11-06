@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { formatarDataBR } from '../domain/datas';
+import { formatarDataBR, motivoPadraoSemExpediente } from '../domain/datas';
 import type { Obra } from '../domain/obras';
 import {
   criarRegistroDiario, EFETIVO_VAZIO, EQUIPAMENTOS, EQUIPAMENTOS_VAZIO, FUNCOES, RITMOS,
@@ -43,8 +43,9 @@ export function RegistroDiaTela({ obra, data, hoje, repositorio, fotos, servicoF
   const [equip, setEquip] = useState<Record<Equipamento, number>>({ ...EQUIPAMENTOS_VAZIO });
   const [ritmo, setRitmo] = useState<Ritmo>('normal');
   const [texto, setTexto] = useState('');
-  const [semExpediente, setSemExpediente] = useState(false);
-  const [motivo, setMotivo] = useState('');
+  const padrao = motivoPadraoSemExpediente(data);
+  const [semExpediente, setSemExpediente] = useState(padrao !== undefined);
+  const [motivo, setMotivo] = useState(padrao ?? '');
   const [erro, setErro] = useState<string>();
   const [lista, setLista] = useState<Foto[]>([]);
 
@@ -87,9 +88,10 @@ export function RegistroDiaTela({ obra, data, hoje, repositorio, fotos, servicoF
   async function salvar() {
     try {
       const registro = criarRegistroDiario({
-        obraId: obra.id, data, ritmo,
-        efetivo: semExpediente ? undefined : efetivo,
-        equipamentos: equip,
+        obraId: obra.id, data,
+        ritmo: obra.controlaEfetivo ? ritmo : undefined,
+        efetivo: semExpediente || !obra.controlaEfetivo ? undefined : efetivo,
+        equipamentos: obra.controlaEfetivo ? equip : undefined,
         anotacoes: texto.split('\n'),
         semExpediente: semExpediente ? motivo : undefined,
       });
@@ -101,7 +103,8 @@ export function RegistroDiaTela({ obra, data, hoje, repositorio, fotos, servicoF
   }
 
   return (
-    <ScrollView style={estilos.tela} contentContainerStyle={estilos.conteudo} keyboardShouldPersistTaps="handled">
+    <ScrollView style={estilos.tela} contentContainerStyle={[estilos.conteudo, { paddingBottom: 48 }]}
+      keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets>
       <Pressable testID="voltar" onPress={onVoltar}><Text style={estilos.subtitulo}>‹ Obras</Text></Pressable>
       <Text style={estilos.titulo}>{obra.nome}</Text>
       <Text style={estilos.subtitulo}>{formatarDataBR(data)}</Text>
@@ -113,7 +116,7 @@ export function RegistroDiaTela({ obra, data, hoje, repositorio, fotos, servicoF
         <TextInput testID="motivo" style={estilos.entrada} placeholder="Motivo (ex.: chuva, feriado)" value={motivo} onChangeText={setMotivo} />
       )}
 
-      {!semExpediente && (
+      {!semExpediente && obra.controlaEfetivo && (
         <>
           <Text style={estilos.secao}>Efetivo</Text>
           <View style={estilos.card}>
@@ -125,24 +128,28 @@ export function RegistroDiaTela({ obra, data, hoje, repositorio, fotos, servicoF
         </>
       )}
 
-      <Text style={estilos.secao}>Equipamentos</Text>
-      <View style={estilos.card}>
-        {EQUIPAMENTOS.map((e) => (
-          <Contador key={e} nome={e} valor={equip[e]} onMudar={(v) => setEquip({ ...equip, [e]: v })} />
-        ))}
-      </View>
+      {obra.controlaEfetivo && (
+        <>
+          <Text style={estilos.secao}>Equipamentos</Text>
+          <View style={estilos.card}>
+            {EQUIPAMENTOS.map((e) => (
+              <Contador key={e} nome={e} valor={equip[e]} onMudar={(v) => setEquip({ ...equip, [e]: v })} />
+            ))}
+          </View>
 
-      <Text style={estilos.secao}>Ritmo dos trabalhos</Text>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        {RITMOS.map((r) => (
-          <Pressable key={r} testID={`ritmo-${r}`} style={[estilos.chip, ritmo === r && estilos.chipAtivo]} onPress={() => setRitmo(r)}>
-            <Text style={{ color: ritmo === r ? '#fff' : '#1f4e79' }}>{r}</Text>
-          </Pressable>
-        ))}
-      </View>
+          <Text style={estilos.secao}>Ritmo dos trabalhos</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {RITMOS.map((r) => (
+              <Pressable key={r} testID={`ritmo-${r}`} style={[estilos.chip, ritmo === r && estilos.chipAtivo]} onPress={() => setRitmo(r)}>
+                <Text style={{ color: ritmo === r ? '#fff' : '#1f4e79' }}>{r}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
 
-      <Text style={estilos.secao}>Anotações (uma por linha)</Text>
-      <TextInput testID="anotacoes" style={[estilos.entrada, { minHeight: 120 }]} multiline value={texto} onChangeText={setTexto} placeholder="Serviços executados, ocorrências…" />
+      <Text style={estilos.secao}>Anotações</Text>
+      <TextInput testID="anotacoes" style={[estilos.entrada, { minHeight: 120 }]} multiline scrollEnabled={false} value={texto} onChangeText={setTexto} placeholder="Serviços executados, ocorrências…" />
 
       <Text style={estilos.secao}>Fotos</Text>
       <View style={{ flexDirection: 'row', gap: 8 }}>

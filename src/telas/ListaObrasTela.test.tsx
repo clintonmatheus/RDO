@@ -7,7 +7,12 @@ describe('ListaObrasTela', () => {
     await render(<ListaObrasTela obras={OBRAS_INICIAIS} onAbrir={() => {}} />);
     expect(screen.getAllByTestId('obra-item')).toHaveLength(4);
     expect(screen.getByText('Construção da Estação Ferroviária Baraúna')).toBeTruthy();
-    expect(screen.getAllByText(/SEMOV/).length).toBe(3);
+    expect(screen.getAllByText(/SEINFRA/).length).toBe(3);
+  });
+
+  it('não mostra o tipo de diário nos cartões', async () => {
+    await render(<ListaObrasTela obras={OBRAS_INICIAIS} onAbrir={() => {}} />);
+    expect(screen.queryByText(/Diário (diário|semanal)/)).toBeNull();
   });
 
   it('abre a obra tocada', async () => {

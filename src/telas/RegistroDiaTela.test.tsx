@@ -72,3 +72,68 @@ describe('RegistroDiaTela', () => {
     expect(r?.efetivo.Servente).toBe(0);
   });
 });
+
+describe('RegistroDiaTela — ajustes', () => {
+  const ubs = OBRAS_INICIAIS.find((o) => o.id === 'ubs')!;
+  const semFotos = { tirarFoto: async () => undefined, escolherDaGaleria: async () => undefined };
+
+  async function abrirObra(o: typeof ubs, dia: string, repo = new RepositorioRegistrosMemoria()) {
+    const onVoltar = jest.fn();
+    await render(<RegistroDiaTela obra={o} data={dia} hoje={dia} repositorio={repo} fotos={new RepositorioFotosMemoria()}
+      servicoFotos={semFotos} onVoltar={onVoltar} />);
+    return { repo, onVoltar };
+  }
+
+  it('rótulo das anotações não tem "(uma por linha)"', async () => {
+    await abrirObra(ubs, '2026-11-05');
+    expect(screen.getByText('Anotações')).toBeTruthy();
+    expect(screen.queryByText(/uma por linha/)).toBeNull();
+  });
+
+  it('obra fora do CBTU mostra só anotações e fotos', async () => {
+    await abrirObra(ubs, '2026-11-05');
+    expect(screen.queryByTestId('mais-Servente')).toBeNull();
+    expect(screen.queryByTestId('mais-Betoneira')).toBeNull();
+    expect(screen.queryByTestId('ritmo-normal')).toBeNull();
+    expect(screen.getByTestId('anotacoes')).toBeTruthy();
+    expect(screen.getByTestId('foto-galeria')).toBeTruthy();
+  });
+
+  it('obra fora do CBTU salva só as anotações', async () => {
+    const { repo, onVoltar } = await abrirObra(ubs, '2026-11-05');
+    await fireEvent.changeText(screen.getByTestId('anotacoes'), 'Reboco interno');
+    await fireEvent.press(screen.getByTestId('salvar'));
+    await waitFor(() => expect(onVoltar).toHaveBeenCalled());
+    const r = await repo.obter('ubs', '2026-11-05');
+    expect(r?.anotacoes).toEqual(['Reboco interno']);
+    expect(r?.semExpediente).toBeUndefined();
+  });
+
+  it('sábado vem como dia sem expediente, motivo "Fim de semana"', async () => {
+    const { repo, onVoltar } = await abrirObra(ubs, '2026-11-07');
+    expect(screen.getByTestId('motivo').props.value).toBe('Fim de semana');
+    await fireEvent.press(screen.getByTestId('salvar'));
+    await waitFor(() => expect(onVoltar).toHaveBeenCalled());
+    expect((await repo.obter('ubs', '2026-11-07'))?.semExpediente).toEqual({ motivo: 'Fim de semana' });
+  });
+
+  it('encarregado pode desmarcar o padrão e registrar trabalho no sábado', async () => {
+    const { repo, onVoltar } = await abrirObra(ubs, '2026-11-07');
+    await fireEvent.press(screen.getByTestId('sem-expediente'));
+    expect(screen.queryByTestId('motivo')).toBeNull();
+    await fireEvent.changeText(screen.getByTestId('anotacoes'), 'Concretagem');
+    await fireEvent.press(screen.getByTestId('salvar'));
+    await waitFor(() => expect(onVoltar).toHaveBeenCalled());
+    const r = await repo.obter('ubs', '2026-11-07');
+    expect(r?.semExpediente).toBeUndefined();
+    expect(r?.anotacoes).toEqual(['Concretagem']);
+  });
+
+  it('registro já salvo num sábado de trabalho não volta a ser fim de semana', async () => {
+    const repo = new RepositorioRegistrosMemoria();
+    await repo.salvar(criarRegistroDiario({ obraId: 'ubs', data: '2026-11-07', anotacoes: ['Trabalho'] }));
+    await abrirObra(ubs, '2026-11-07', repo);
+    await waitFor(() => expect(screen.getByTestId('anotacoes').props.value).toBe('Trabalho'));
+    expect(screen.queryByTestId('motivo')).toBeNull();
+  });
+});

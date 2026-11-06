@@ -46,3 +46,14 @@ describe('formatarDataBR', () => {
   it('formata em dd/mm/aaaa', () => expect(formatarDataBR('2026-11-05')).toBe('05/11/2026'));
   it('rejeita data inválida', () => expect(() => formatarDataBR('2026-13-01')).toThrow('Data inválida'));
 });
+
+import { motivoPadraoSemExpediente } from './datas';
+describe('motivoPadraoSemExpediente', () => {
+  it('sábado e domingo são fim de semana', () => {
+    expect(motivoPadraoSemExpediente('2026-11-07')).toBe('Fim de semana');
+    expect(motivoPadraoSemExpediente('2026-11-08')).toBe('Fim de semana');
+  });
+  it('dias úteis não têm motivo padrão', () => {
+    expect(motivoPadraoSemExpediente('2026-11-06')).toBeUndefined();
+  });
+});

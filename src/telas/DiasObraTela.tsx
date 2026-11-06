@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text } from 'react-native';
-import { adicionarDias, diaDaSemana, formatarDataBR } from '../domain/datas';
+import { adicionarDias, diaDaSemana, formatarDataBR, motivoPadraoSemExpediente } from '../domain/datas';
 import type { Obra } from '../domain/obras';
 import { totalEfetivo, type RegistroDiario } from '../domain/registro';
 import type { Foto } from '../domain/foto';
@@ -21,11 +21,15 @@ interface Props {
   onVoltar: () => void;
 }
 
-function status(r: RegistroDiario | undefined, nFotos: number): string {
+function status(obra: Obra, data: string, r: RegistroDiario | undefined, nFotos: number): string {
   const foto = nFotos > 0 ? ` · ${nFotos} ${nFotos === 1 ? 'foto' : 'fotos'}` : '';
-  if (!r) return `Sem registro${foto}`;
+  if (!r) {
+    const padrao = motivoPadraoSemExpediente(data);
+    return padrao ? `Sem expediente: ${padrao}${foto}` : `Sem registro${foto}`;
+  }
   if (r.semExpediente) return `Sem expediente: ${r.semExpediente.motivo}${foto}`;
-  return `Registrado · ${totalEfetivo(r)} no efetivo${foto}`;
+  const efetivo = obra.controlaEfetivo ? ` · ${totalEfetivo(r)} no efetivo` : '';
+  return `Registrado${efetivo}${foto}`;
 }
 
 export function DiasObraTela({ obra, hoje, registros, fotos, gerarPdf, onAbrir, onVoltar }: Props) {
@@ -68,7 +72,7 @@ export function DiasObraTela({ obra, hoje, registros, fotos, gerarPdf, onAbrir, 
       {dias.map((d) => (
         <Pressable key={d} testID={`dia-${d}`} style={estilos.card} onPress={() => onAbrir(d)}>
           <Text testID="dia-item" style={estilos.titulo}>{`${diaDaSemana(d)} ${formatarDataBR(d)}`}</Text>
-          <Text testID={`status-${d}`} style={estilos.subtitulo}>{status(porDia[d], fotosDia[d] ?? 0)}</Text>
+          <Text testID={`status-${d}`} style={estilos.subtitulo}>{status(obra, d, porDia[d], fotosDia[d] ?? 0)}</Text>
         </Pressable>
       ))}
     </ScrollView>

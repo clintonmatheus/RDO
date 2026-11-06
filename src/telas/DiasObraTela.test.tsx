@@ -65,3 +65,20 @@ describe('DiasObraTela — diário semanal', () => {
     expect(screen.queryByTestId('gerar-semanal')).toBeNull();
   });
 });
+
+describe('DiasObraTela — ajustes', () => {
+  it('fim de semana sem registro aparece como sem expediente', async () => {
+    await abrir();
+    expect(await screen.findByTestId('status-2026-11-01')).toHaveTextContent('Sem expediente: Fim de semana');
+  });
+
+  it('obra fora do CBTU não mostra efetivo no status', async () => {
+    const ubs = OBRAS_INICIAIS.find((o) => o.id === 'ubs')!;
+    const registros = new RepositorioRegistrosMemoria();
+    await registros.salvar(criarRegistroDiario({ obraId: 'ubs', data: '2026-11-04', anotacoes: ['x'] }));
+    await render(<DiasObraTela obra={ubs} hoje="2026-11-05" registros={registros} fotos={new RepositorioFotosMemoria()}
+      gerarPdf={async () => {}} onAbrir={() => {}} onVoltar={() => {}} />);
+    expect(await screen.findByTestId('status-2026-11-04')).toHaveTextContent('Registrado');
+    expect(screen.getByTestId('status-2026-11-04')).not.toHaveTextContent('efetivo');
+  });
+});

@@ -1,4 +1,4 @@
-import { adicionarDias, diaDaSemana, formatarDataBR, periodoSemanal } from '../domain/datas';
+import { adicionarDias, diaDaSemana, formatarDataBR, motivoPadraoSemExpediente, periodoSemanal } from '../domain/datas';
 import type { Foto } from '../domain/foto';
 import type { Obra } from '../domain/obras';
 import {
@@ -35,7 +35,10 @@ export function montarDiarioSemanal(obra: Obra, dataNaSemana: string, registros:
       diaSemana: diaDaSemana(d),
       fotos: fotos.filter((f) => f.obraId === obra.id && f.data === d).sort((a, b) => a.capturadaEm.localeCompare(b.capturadaEm)),
     };
-    if (!r) {
+    const padrao = motivoPadraoSemExpediente(d);
+    if (!r && padrao) {
+      dias.push({ ...base, status: 'sem-expediente', motivo: padrao, efetivoTotal: 0, efetivo: [], equipamentos: [], anotacoes: [] });
+    } else if (!r) {
       dias.push({ ...base, status: 'sem-registro', efetivoTotal: 0, efetivo: [], equipamentos: [], anotacoes: [] });
     } else {
       dias.push({
@@ -63,17 +66,20 @@ export function diarioSemanalHtml(diario: DiarioSemanal, srcDaFoto: (f: Foto) =>
     if (d.status === 'sem-expediente') return `<section>${titulo}<p>Sem expediente: ${esc(d.motivo ?? '')}</p>${fotosHtml(d)}</section>`;
     const efetivo = d.efetivo.map((e) => `${esc(e.funcao)}: ${e.quantidade}`).join(' · ');
     const equip = d.equipamentos.map((e) => `${esc(e.equipamento)}: ${e.quantidade}`).join(' · ');
-    return `<section>${titulo}
-<p><b>Efetivo (${d.efetivoTotal}):</b> ${efetivo || '—'}</p>
+    const detalhes = obra.controlaEfetivo
+      ? `<p><b>Efetivo (${d.efetivoTotal}):</b> ${efetivo || '—'}</p>
 ${equip ? `<p><b>Equipamentos:</b> ${equip}</p>` : ''}
-<p><b>Ritmo:</b> ${esc(d.ritmo ?? '')}</p>
+<p><b>Ritmo:</b> ${esc(d.ritmo ?? '')}</p>`
+      : '';
+    return `<section>${titulo}
+${detalhes}
 <ul>${d.anotacoes.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>${fotosHtml(d)}</section>`;
   });
 
   function fotosHtml(d: DiaDoDiario): string {
     if (!d.fotos.length) return '';
     return `<div class="fotos">${d.fotos
-      .map((f) => `<figure><img src="${esc(srcDaFoto(f))}"/><figcaption>${formatarDataBR(f.data)}</figcaption></figure>`)
+      .map((f) => `<figure><img src="${esc(srcDaFoto(f))}"/></figure>`)
       .join('')}</div>`;
   }
 
@@ -82,7 +88,7 @@ body{font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#111;margin:24p
 h1{font-size:18px;margin:0}h3{font-size:13px;margin:12px 0 4px;text-transform:capitalize}
 section{border-top:1px solid #bbb;padding-bottom:6px;page-break-inside:avoid}
 .suave{color:#666}.fotos{display:flex;flex-wrap:wrap;gap:6px}
-figure{margin:0}img{width:150px;height:110px;object-fit:cover}figcaption{font-size:10px;color:#555}
+figure{margin:0}img{width:150px;height:110px;object-fit:cover}
 </style></head><body>
 <h1>Diário de Ocorrências — semana ${formatarDataBR(periodo.inicio)} a ${formatarDataBR(periodo.fim)}</h1>
 <p><b>${esc(obra.nome)}</b><br/>${esc(obra.orgao)} · Contrato ${esc(obra.contrato)} · ${esc(obra.local)}</p>

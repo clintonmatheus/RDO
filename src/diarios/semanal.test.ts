@@ -60,7 +60,7 @@ describe('diarioSemanalHtml', () => {
 
   it('traz cabeçalho, período e anotações', () => {
     expect(html).toContain(ubs.nome);
-    expect(html).toContain('SEMOV');
+    expect(html).toContain('SEINFRA');
     expect(html).toContain('31/10/2026');
     expect(html).toContain('06/11/2026');
     expect(html).toContain('Alvenaria do bloco B');
@@ -77,5 +77,34 @@ describe('diarioSemanalHtml', () => {
     const h = diarioSemanalHtml(montarDiarioSemanal(ubs, '2026-11-05', [r], []), () => '');
     expect(h).toContain('&lt;b&gt;x&lt;/b&gt; &amp; y');
     expect(h).not.toContain('<b>x</b>');
+  });
+});
+
+describe('diário semanal — ajustes', () => {
+  const d = montarDiarioSemanal(ubs, '2026-11-05', registros, fotos);
+  const html = diarioSemanalHtml(d, (f) => `data:${f.id}`);
+
+  it('não imprime data sob a foto', () => {
+    expect(html).not.toContain('figcaption');
+  });
+
+  it('obra sem controle de efetivo não imprime efetivo, equipamentos nem ritmo', () => {
+    expect(html).not.toContain('Efetivo');
+    expect(html).not.toContain('Equipamentos');
+    expect(html).not.toContain('Ritmo');
+    expect(html).toContain('Alvenaria do bloco B');
+  });
+
+  it('sábado e domingo sem registro saem como sem expediente por padrão', () => {
+    expect(d.dias.find((x) => x.data === '2026-10-31')).toMatchObject({ status: 'sem-expediente', motivo: 'Fim de semana' });
+    expect(d.dias.find((x) => x.data === '2026-11-01')).toMatchObject({ status: 'sem-expediente', motivo: 'Fim de semana' });
+    expect(html).toContain('Sem expediente: Fim de semana');
+  });
+
+  it('registro salvo num sábado prevalece sobre o padrão', () => {
+    const r = criarRegistroDiario({ obraId: 'ubs', data: '2026-10-31', anotacoes: ['Serviço extra'] });
+    const dia = montarDiarioSemanal(ubs, '2026-11-05', [r], []).dias[0];
+    expect(dia.status).toBe('registrado');
+    expect(dia.anotacoes).toEqual(['Serviço extra']);
   });
 });

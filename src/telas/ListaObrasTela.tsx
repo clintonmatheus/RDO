@@ -19,7 +19,6 @@ export function ListaObrasTela({ obras, onAbrir }: Props) {
           <Pressable testID="obra-item" style={estilos.card} onPress={() => onAbrir(item)}>
             <Text style={estilos.titulo}>{item.nome}</Text>
             <Text style={estilos.subtitulo}>{`${item.orgao} · Contrato ${item.contrato}`}</Text>
-            <Text style={estilos.subtitulo}>{item.tipoDiario === 'diario' ? 'Diário diário' : 'Diário semanal'}</Text>
           </Pressable>
         )}
       />

@@ -53,3 +53,9 @@ export function formatarDataBR(data: string): string {
   const [a, m, d] = data.split('-');
   return `${d}/${m}/${a}`;
 }
+
+/** Sábados e domingos são, por padrão, dias sem expediente. */
+export function motivoPadraoSemExpediente(data: string): string | undefined {
+  const d = diaDaSemana(data);
+  return d === 'sábado' || d === 'domingo' ? 'Fim de semana' : undefined;
+}
