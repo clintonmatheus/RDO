@@ -3,7 +3,7 @@ import { abrirBanco, type BancoSql } from './sqlite';
 
 /** Adaptador do expo-sqlite para BancoSql (não coberto por testes: depende do dispositivo). */
 export async function abrirBancoDoApp(): Promise<BancoSql> {
-  const db = await SQLite.openDatabaseAsync('rdo.db');
+  const db = await SQLite.openDatabaseAsync('rdo-v2.db');
   return abrirBanco({
     exec: (sql) => db.execAsync(sql),
     executar: async (sql, params = []) => { await db.runAsync(sql, params); },

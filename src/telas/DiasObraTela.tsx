@@ -9,7 +9,7 @@ import {
 import type { Foto } from '../domain/foto';
 import type { Obra } from '../domain/obras';
 import { totalEfetivo, type RegistroDiario } from '../domain/registro';
-import type { RepositorioFotos, RepositorioRegistros } from '../storage/contrato';
+import type { Dados } from '../dados/dados';
 import { Cabecalho } from './Cabecalho';
 import { cores, estilos } from './estilos';
 
@@ -18,8 +18,9 @@ const SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 interface Props {
   obra: Obra;
   hoje: string;
-  registros: RepositorioRegistros;
-  fotos: RepositorioFotos;
+  dados: Dados;
+  /** Muda quando chegam dados de outros aparelhos (recarrega a tela). */
+  versao?: number;
   gerarPdf: (diario: DiarioSemanal) => Promise<void>;
   onAbrir: (data: string) => void;
   onVoltar: () => void;
@@ -27,8 +28,9 @@ interface Props {
 
 type Tipo = 'registrado' | 'sem-expediente' | 'pendente';
 
-function status(obra: Obra, data: string, r: RegistroDiario | undefined, nFotos: number): { texto: string; tipo: Tipo } {
+function status(obra: Obra, data: string, r: RegistroDiario | undefined, nFotos: number, nNotas: number): { texto: string; tipo: Tipo } {
   const foto = nFotos > 0 ? ` · ${nFotos} ${nFotos === 1 ? 'foto' : 'fotos'}` : '';
+  if (!r && nNotas > 0) return { texto: `Registrado${foto}`, tipo: 'registrado' };
   if (!r) {
     const padrao = motivoPadraoSemExpediente(data);
     return padrao
@@ -50,7 +52,7 @@ function Seta({ id, texto, onPress }: { id: string; texto: string; onPress: () =
   );
 }
 
-export function DiasObraTela({ obra, hoje, registros, fotos, gerarPdf, onAbrir, onVoltar }: Props) {
+export function DiasObraTela({ obra, hoje, dados, gerarPdf, onAbrir, onVoltar, versao = 0 }: Props) {
   const [mes, setMes] = useState<Periodo>(periodoDoMes(hoje));
   const dias: string[] = [];
   for (let d = mes.inicio; d <= mes.fim; d = adicionarDias(d, 1)) dias.push(d);
@@ -61,6 +63,7 @@ export function DiasObraTela({ obra, hoje, registros, fotos, gerarPdf, onAbrir, 
 
   const [porDia, setPorDia] = useState<Record<string, RegistroDiario>>();
   const [fotosDia, setFotosDia] = useState<Record<string, number>>({});
+  const [notasDia, setNotasDia] = useState<Record<string, number>>({});
   const [periodo, setPeriodo] = useState<Periodo>(inicial);
   const [de, setDe] = useState(formatarDataBR(inicial.inicio));
   const [ate, setAte] = useState(formatarDataBR(inicial.fim));
@@ -70,17 +73,23 @@ export function DiasObraTela({ obra, hoje, registros, fotos, gerarPdf, onAbrir, 
   useEffect(() => {
     let ativo = true;
     (async () => {
-      const lista = await registros.listar(obra.id, mes.inicio, mes.fim);
-      const todas: Foto[] = await fotos.listarPorObra(obra.id);
+      const [lista, todas, notas] = await Promise.all([
+        dados.listarRegistros(obra.id, mes.inicio, mes.fim),
+        dados.listarFotosDaObra(obra.id),
+        dados.listarAnotacoes(obra.id, mes.inicio, mes.fim),
+      ]);
       if (!ativo) return;
       setPorDia(Object.fromEntries(lista.map((r) => [r.data, r])));
       const cont: Record<string, number> = {};
-      for (const f of todas) cont[f.data] = (cont[f.data] ?? 0) + 1;
+      for (const f of todas as Foto[]) cont[f.data] = (cont[f.data] ?? 0) + 1;
       setFotosDia(cont);
+      const cn: Record<string, number> = {};
+      for (const a of notas) cn[a.data] = (cn[a.data] ?? 0) + 1;
+      setNotasDia(cn);
     })();
     return () => { ativo = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [obra.id, mes.inicio, registros, fotos]);
+  }, [obra.id, mes.inicio, dados, versao]);
 
   function aplicar(p: Periodo) {
     setPeriodo(p);
@@ -103,12 +112,16 @@ export function DiasObraTela({ obra, hoje, registros, fotos, gerarPdf, onAbrir, 
     try {
       let diario: DiarioSemanal;
       if (semanal) {
-        const [regs, todas] = await Promise.all([registros.listar(obra.id, periodo.inicio, periodo.fim), fotos.listarPorObra(obra.id)]);
-        diario = montarDiarioSemanal(obra, periodo.inicio, regs, todas);
+        const [regs, todas, notas] = await Promise.all([
+          dados.listarRegistros(obra.id, periodo.inicio, periodo.fim), dados.listarFotosDaObra(obra.id), dados.listarAnotacoes(obra.id, periodo.inicio, periodo.fim),
+        ]);
+        diario = montarDiarioSemanal(obra, periodo.inicio, regs, todas, notas);
       } else {
         const p: Periodo = { inicio: analisarDataBR(de), fim: analisarDataBR(ate) };
-        const [regs, todas] = await Promise.all([registros.listar(obra.id, p.inicio, p.fim), fotos.listarPorObra(obra.id)]);
-        diario = montarDiarioCbtu(obra, p, regs, todas);
+        const [regs, todas, notas] = await Promise.all([
+          dados.listarRegistros(obra.id, p.inicio, p.fim), dados.listarFotosDaObra(obra.id), dados.listarAnotacoes(obra.id, p.inicio, p.fim),
+        ]);
+        diario = montarDiarioCbtu(obra, p, regs, todas, notas);
       }
       setGerando(true);
       await gerarPdf(diario);
@@ -161,7 +174,7 @@ export function DiasObraTela({ obra, hoje, registros, fotos, gerarPdf, onAbrir, 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
             {Array.from({ length: vazios }, (_, i) => <View key={`v${i}`} style={{ width: '14.2857%', height: 52 }} />)}
             {dias.map((d) => {
-              const s = status(obra, d, porDia[d], fotosDia[d] ?? 0);
+              const s = status(obra, d, porDia[d], fotosDia[d] ?? 0, notasDia[d] ?? 0);
               const futuro = d > hoje;
               return (
                 <View key={d} style={{ width: '14.2857%', height: 52, padding: 2 }}>

@@ -107,3 +107,9 @@ export function nomeDoMes(data: string): string {
   const [a, m] = data.split('-').map(Number);
   return `${MESES[m - 1]} de ${a}`;
 }
+
+/** Instante ISO (UTC) → "HH:MM" no horário de Natal (UTC-3). */
+export function horaLocal(instante: string, offsetMin = -180): string {
+  const d = new Date(Date.parse(instante) + offsetMin * 60_000);
+  return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+}

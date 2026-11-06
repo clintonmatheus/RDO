@@ -1,4 +1,5 @@
 import { adicionarDias, diaDaSemana, formatarDataBR, motivoPadraoSemExpediente, periodoSemanal } from '../domain/datas';
+import { anotacoesVisiveis, type Anotacao } from '../domain/anotacao';
 import type { Foto } from '../domain/foto';
 import type { Obra } from '../domain/obras';
 import {
@@ -24,14 +25,19 @@ export interface DiarioSemanal {
   dias: DiaDoDiario[];
 }
 
-export function montarDiarioSemanal(obra: Obra, dataNaSemana: string, registros: RegistroDiario[], fotos: Foto[]): DiarioSemanal {
+export function montarDiarioSemanal(
+  obra: Obra, dataNaSemana: string, registros: RegistroDiario[], fotos: Foto[], anotacoes: Anotacao[] = [],
+): DiarioSemanal {
   if (obra.tipoDiario !== 'semanal' || !obra.inicioSemana) throw new Error('Obra sem diário semanal');
   const periodo = periodoSemanal(dataNaSemana, obra.inicioSemana);
-  return { obra, periodo, dias: montarDias(obra, periodo, registros, fotos) };
+  return { obra, periodo, dias: montarDias(obra, periodo, registros, fotos, anotacoes) };
 }
 
 /** Um item por dia do período, combinando registros, fotos e o padrão de fim de semana. */
-export function montarDias(obra: Obra, periodo: { inicio: string; fim: string }, registros: RegistroDiario[], fotos: Foto[]): DiaDoDiario[] {
+export function montarDias(
+  obra: Obra, periodo: { inicio: string; fim: string }, registros: RegistroDiario[], fotos: Foto[], anotacoes: Anotacao[] = [],
+): DiaDoDiario[] {
+  const visiveis = anotacoesVisiveis(anotacoes.filter((a) => a.obraId === obra.id));
   const dias: DiaDoDiario[] = [];
   for (let d = periodo.inicio; d <= periodo.fim; d = adicionarDias(d, 1)) {
     const r = registros.find((x) => x.obraId === obra.id && x.data === d);
@@ -40,8 +46,11 @@ export function montarDias(obra: Obra, periodo: { inicio: string; fim: string },
       diaSemana: diaDaSemana(d),
       fotos: fotos.filter((f) => f.obraId === obra.id && f.data === d).sort((a, b) => a.capturadaEm.localeCompare(b.capturadaEm)),
     };
+    const notas = visiveis.filter((a) => a.data === d).map((a) => a.texto);
     const padrao = motivoPadraoSemExpediente(d);
-    if (!r && padrao) {
+    if (!r && notas.length) {
+      dias.push({ ...base, status: 'registrado', efetivoTotal: 0, efetivo: [], equipamentos: [], anotacoes: notas });
+    } else if (!r && padrao) {
       dias.push({ ...base, status: 'sem-expediente', motivo: padrao, efetivoTotal: 0, efetivo: [], equipamentos: [], anotacoes: [] });
     } else if (!r) {
       dias.push({ ...base, status: 'sem-registro', efetivoTotal: 0, efetivo: [], equipamentos: [], anotacoes: [] });
@@ -54,7 +63,7 @@ export function montarDias(obra: Obra, periodo: { inicio: string; fim: string },
         efetivo: FUNCOES.filter((f) => r.efetivo[f] > 0).map((funcao) => ({ funcao, quantidade: r.efetivo[funcao] })),
         equipamentos: EQUIPAMENTOS.filter((e) => r.equipamentos[e] > 0).map((equipamento) => ({ equipamento, quantidade: r.equipamentos[equipamento] })),
         ritmo: r.ritmo,
-        anotacoes: r.anotacoes,
+        anotacoes: notas,
       });
     }
   }

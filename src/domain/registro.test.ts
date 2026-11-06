@@ -3,11 +3,11 @@ import { criarRegistroDiario, totalEfetivo, EFETIVO_VAZIO } from './registro';
 const base = { obraId: 'cbtu-barauna', data: '2026-06-29' };
 
 describe('criarRegistroDiario', () => {
-  it('cria registro com efetivo zerado, ritmo normal e sem anotações', () => {
+  it('cria registro com efetivo zerado e ritmo normal', () => {
     const r = criarRegistroDiario(base);
     expect(r.efetivo).toEqual(EFETIVO_VAZIO);
     expect(r.ritmo).toBe('normal');
-    expect(r.anotacoes).toEqual([]);
+    expect('anotacoes' in r).toBe(false);
     expect(r.semExpediente).toBeUndefined();
   });
 
@@ -16,16 +16,15 @@ describe('criarRegistroDiario', () => {
       ...base,
       efetivo: { 'Mestre de Obra': 1, Servente: 5, Pedreiro: 4 },
       equipamentos: { Betoneira: 1 },
-      anotacoes: ['Montagem das formas dos pilares'],
     });
     expect(totalEfetivo(r)).toBe(10);
     expect(r.equipamentos.Betoneira).toBe(1);
-    expect(r.anotacoes).toEqual(['Montagem das formas dos pilares']);
   });
 
-  it('remove anotações vazias e espaços extras', () => {
-    const r = criarRegistroDiario({ ...base, anotacoes: ['  Concretagem  ', '', '   '] });
-    expect(r.anotacoes).toEqual(['Concretagem']);
+  it('registra quem alterou e quando', () => {
+    const r = criarRegistroDiario({ ...base, autor: { id: 'u1', nome: 'Ana', admin: false }, agora: '2026-11-06T12:00:00.000Z' });
+    expect(r.atualizadoPor).toEqual({ id: 'u1', nome: 'Ana' });
+    expect(r.atualizadoEm).toBe('2026-11-06T12:00:00.000Z');
   });
 
   it('rejeita quantidade negativa ou fracionada', () => {

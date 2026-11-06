@@ -1,8 +1,10 @@
 import { DatabaseSync } from 'node:sqlite';
-import { abrirBanco, RepositorioFotosSqlite, RepositorioRegistrosSqlite, type BancoSql } from './sqlite';
-import { testarRepositorioFotos, testarRepositorioRegistros } from './contrato.test-suite';
+import { abrirBanco, criarArmazenamentoSqlite, type BancoSql } from './sqlite';
+import {
+  testarFilaECursores, testarRepositorioAnotacoes, testarRepositorioFotos, testarRepositorioFotosSync, testarRepositorioRegistros,
+} from './contrato.test-suite';
 
-function bancoNode(): BancoSql {
+export function bancoNode(): BancoSql {
   const db = new DatabaseSync(':memory:');
   return {
     exec: async (sql) => { db.exec(sql); },
@@ -11,8 +13,12 @@ function bancoNode(): BancoSql {
   };
 }
 
-testarRepositorioRegistros('sqlite', async () => new RepositorioRegistrosSqlite(await abrirBanco(bancoNode())));
-testarRepositorioFotos('sqlite', async () => new RepositorioFotosSqlite(await abrirBanco(bancoNode())));
+const novo = async () => criarArmazenamentoSqlite(await abrirBanco(bancoNode()));
+testarRepositorioRegistros('sqlite', async () => (await novo()).registros);
+testarRepositorioFotos('sqlite', async () => (await novo()).fotos);
+testarRepositorioFotosSync('sqlite', async () => (await novo()).fotos);
+testarRepositorioAnotacoes('sqlite', async () => (await novo()).anotacoes);
+testarFilaECursores('sqlite', novo);
 
 describe('migração', () => {
   it('é idempotente', async () => {

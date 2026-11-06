@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { DiasObraTela } from './DiasObraTela';
-import { RepositorioFotosMemoria, RepositorioRegistrosMemoria } from '../storage/memoria';
+import { criarArmazenamentoMemoria } from '../storage/memoria';
+import { dadosDeTeste, nota } from '../testes/fabricas';
 import { criarRegistroDiario } from '../domain/registro';
 import { criarFoto } from '../domain/foto';
 import { OBRAS_INICIAIS } from '../domain/obras';
@@ -8,12 +9,12 @@ import { OBRAS_INICIAIS } from '../domain/obras';
 const obra = OBRAS_INICIAIS[0];
 
 async function abrir(onAbrir = jest.fn()) {
-  const registros = new RepositorioRegistrosMemoria();
-  const fotos = new RepositorioFotosMemoria();
-  await registros.salvar(criarRegistroDiario({ obraId: obra.id, data: '2026-11-04', efetivo: { Servente: 2 } }));
-  await registros.salvar(criarRegistroDiario({ obraId: obra.id, data: '2026-11-03', semExpediente: 'Chuva' }));
-  await fotos.salvar(criarFoto({ id: 'f1', obraId: obra.id, uri: 'u', origem: 'camera', capturadaEm: '2026-11-04T15:00:00.000Z' }));
-  await render(<DiasObraTela obra={obra} hoje="2026-11-05" registros={registros} fotos={fotos} gerarPdf={async () => {}} onAbrir={onAbrir} onVoltar={() => {}} />);
+  const a = criarArmazenamentoMemoria();
+  await a.registros.salvar(criarRegistroDiario({ obraId: obra.id, data: '2026-11-04', efetivo: { Servente: 2 } }));
+  await a.registros.salvar(criarRegistroDiario({ obraId: obra.id, data: '2026-11-03', semExpediente: 'Chuva' }));
+  await a.fotos.salvar(criarFoto({ id: 'f1', obraId: obra.id, uri: 'u', origem: 'camera', capturadaEm: '2026-11-04T15:00:00.000Z' }));
+  await a.anotacoes.salvar(nota(obra.id, '2026-11-02', 'Só anotação'));
+  await render(<DiasObraTela obra={obra} hoje="2026-11-05" dados={dadosDeTeste(undefined, a).dados} gerarPdf={async () => {}} onAbrir={onAbrir} onVoltar={() => {}} />);
   return onAbrir;
 }
 
@@ -35,6 +36,7 @@ describe('DiasObraTela', () => {
     expect(rotulo('2026-11-05')).toContain('Sem registro');
     expect(rotulo('2026-11-04')).toContain('Registrado · 2 no efetivo · 1 foto');
     expect(rotulo('2026-11-03')).toContain('Sem expediente: Chuva');
+    expect(rotulo('2026-11-02')).toContain('Registrado');
   });
 
   it('abre o dia tocado', async () => {
@@ -67,7 +69,7 @@ describe('DiasObraTela — diário semanal', () => {
 
   async function abrirObra(o: typeof ubs, gerarPdf = jest.fn(async () => {})) {
     await render(
-      <DiasObraTela obra={o} hoje="2026-11-05" registros={new RepositorioRegistrosMemoria()} fotos={new RepositorioFotosMemoria()}
+      <DiasObraTela obra={o} hoje="2026-11-05" dados={dadosDeTeste().dados}
         gerarPdf={gerarPdf} onAbrir={() => {}} onVoltar={() => {}} />,
     );
     return gerarPdf;
@@ -97,9 +99,9 @@ describe('DiasObraTela — ajustes', () => {
 
   it('obra fora do CBTU não mostra efetivo no status', async () => {
     const ubs = OBRAS_INICIAIS.find((o) => o.id === 'ubs')!;
-    const registros = new RepositorioRegistrosMemoria();
-    await registros.salvar(criarRegistroDiario({ obraId: 'ubs', data: '2026-11-04', anotacoes: ['x'] }));
-    await render(<DiasObraTela obra={ubs} hoje="2026-11-05" registros={registros} fotos={new RepositorioFotosMemoria()}
+    const a = criarArmazenamentoMemoria();
+    await a.registros.salvar(criarRegistroDiario({ obraId: 'ubs', data: '2026-11-04' }));
+    await render(<DiasObraTela obra={ubs} hoje="2026-11-05" dados={dadosDeTeste(undefined, a).dados}
       gerarPdf={async () => {}} onAbrir={() => {}} onVoltar={() => {}} />);
     await screen.findAllByTestId('dia-item');
     const r = screen.getByTestId('dia-2026-11-04').props.accessibilityLabel as string;
@@ -111,7 +113,7 @@ describe('DiasObraTela — ajustes', () => {
 describe('DiasObraTela — diário mensal do CBTU', () => {
   async function abrirObra(o: (typeof OBRAS_INICIAIS)[number], gerarPdf = jest.fn(async () => {})) {
     await render(
-      <DiasObraTela obra={o} hoje="2026-11-05" registros={new RepositorioRegistrosMemoria()} fotos={new RepositorioFotosMemoria()}
+      <DiasObraTela obra={o} hoje="2026-11-05" dados={dadosDeTeste().dados}
         gerarPdf={gerarPdf} onAbrir={() => {}} onVoltar={() => {}} />,
     );
     return gerarPdf;
@@ -138,7 +140,7 @@ describe('DiasObraTela — escolha de período', () => {
 
   async function abrirObra(o: typeof cbtuObra, gerarPdf = jest.fn(async () => {})) {
     await render(
-      <DiasObraTela obra={o} hoje="2026-11-05" registros={new RepositorioRegistrosMemoria()} fotos={new RepositorioFotosMemoria()}
+      <DiasObraTela obra={o} hoje="2026-11-05" dados={dadosDeTeste().dados}
         gerarPdf={gerarPdf} onAbrir={() => {}} onVoltar={() => {}} />,
     );
     return gerarPdf;
@@ -187,5 +189,18 @@ describe('DiasObraTela — escolha de período', () => {
     await fireEvent.press(screen.getByTestId('gerar-semanal'));
     expect(periodoGerado(g)).toEqual({ inicio: '2026-10-24', fim: '2026-10-30' });
     expect(screen.queryByTestId('periodo-de')).toBeNull();
+  });
+});
+
+describe('DiasObraTela — anotações no PDF', () => {
+  it('o PDF inclui as anotações do período', async () => {
+    const ubs = OBRAS_INICIAIS.find((o) => o.id === 'ubs')!;
+    const a = criarArmazenamentoMemoria();
+    await a.anotacoes.salvar(nota('ubs', '2026-11-03', 'Reboco interno'));
+    const gerar = jest.fn(async () => {});
+    await render(<DiasObraTela obra={ubs} hoje="2026-11-05" dados={dadosDeTeste(undefined, a).dados} gerarPdf={gerar} onAbrir={() => {}} onVoltar={() => {}} />);
+    await fireEvent.press(await screen.findByTestId('gerar-semanal'));
+    const diario = (gerar.mock.calls[0] as any[])[0];
+    expect(diario.dias.find((d: any) => d.data === '2026-11-03').anotacoes).toEqual(['Reboco interno']);
   });
 });

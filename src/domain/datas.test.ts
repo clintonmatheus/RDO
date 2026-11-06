@@ -107,3 +107,11 @@ describe('calendário', () => {
     expect(nomeDoMes('2027-03-01')).toBe('março de 2027');
   });
 });
+
+import { horaLocal } from './datas';
+describe('horaLocal', () => {
+  it('converte instante UTC para HH:MM de Natal', () => {
+    expect(horaLocal('2026-11-05T12:00:00.000Z')).toBe('09:00');
+    expect(horaLocal('2026-11-06T02:30:00.000Z')).toBe('23:30');
+  });
+});

@@ -2,6 +2,7 @@ import { diarioCbtuHtml, montarDiarioMensal } from './cbtu';
 import { criarRegistroDiario } from '../domain/registro';
 import { criarFoto } from '../domain/foto';
 import { OBRAS_INICIAIS } from '../domain/obras';
+import { nota } from '../testes/fabricas';
 
 const cbtu = OBRAS_INICIAIS[0];
 const ubs = OBRAS_INICIAIS[1];
@@ -9,11 +10,15 @@ const ubs = OBRAS_INICIAIS[1];
 const registros = [
   criarRegistroDiario({
     obraId: cbtu.id, data: '2026-11-05', efetivo: { 'Mestre de Obra': 1, Servente: 4, Pedreiro: 3 },
-    equipamentos: { Betoneira: 1 }, ritmo: 'acelerado', anotacoes: ['Concretagem da laje', 'Limpeza <geral> & entulho'],
+    equipamentos: { Betoneira: 1 }, ritmo: 'acelerado',
   }),
   criarRegistroDiario({ obraId: cbtu.id, data: '2026-11-06', semExpediente: 'Chuva' }),
-  criarRegistroDiario({ obraId: cbtu.id, data: '2026-12-01', anotacoes: ['outro mês'] }),
-  criarRegistroDiario({ obraId: 'ubs', data: '2026-11-05', anotacoes: ['outra obra'] }),
+];
+const anotacoes = [
+  nota(cbtu.id, '2026-11-05', 'Concretagem da laje', '10:00'),
+  nota(cbtu.id, '2026-11-05', 'Limpeza <geral> & entulho', '16:00'),
+  nota(cbtu.id, '2026-12-01', 'outro mês'),
+  nota('ubs', '2026-11-05', 'outra obra'),
 ];
 const fotos = [
   criarFoto({ id: 'f1', obraId: cbtu.id, uri: 'u1', origem: 'camera', capturadaEm: '2026-11-05T15:00:00.000Z' }),
@@ -21,7 +26,7 @@ const fotos = [
 ];
 
 describe('montarDiarioMensal', () => {
-  const d = montarDiarioMensal(cbtu, '2026-11-20', registros, fotos);
+  const d = montarDiarioMensal(cbtu, '2026-11-20', registros, fotos, anotacoes);
 
   it('cobre o mês inteiro, dia a dia', () => {
     expect(d.periodo).toEqual({ inicio: '2026-11-01', fim: '2026-11-30' });
@@ -43,7 +48,7 @@ describe('montarDiarioMensal', () => {
 });
 
 describe('diarioCbtuHtml', () => {
-  const d = montarDiarioMensal(cbtu, '2026-11-20', registros, fotos);
+  const d = montarDiarioMensal(cbtu, '2026-11-20', registros, fotos, anotacoes);
   const html = diarioCbtuHtml(d, (f) => `data:${f.id}`);
 
   it('traz cabeçalho com obra, contrato, ART e período', () => {
@@ -76,7 +81,7 @@ describe('diarioCbtuHtml', () => {
   it('inclui registro fotográfico com data, só quando há fotos', () => {
     expect(html).toContain('Registro fotográfico');
     expect(html).toContain('src="data:f1"');
-    const sem = diarioCbtuHtml(montarDiarioMensal(cbtu, '2026-11-20', registros, []), () => '');
+    const sem = diarioCbtuHtml(montarDiarioMensal(cbtu, '2026-11-20', registros, [], anotacoes), () => '');
     expect(sem).not.toContain('Registro fotográfico');
   });
 });

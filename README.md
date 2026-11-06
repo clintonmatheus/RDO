@@ -55,3 +55,15 @@ As compilações rodam na nuvem do GitHub (aba **Actions**), sem Mac e sem Andro
 5. Apple ID gratuito: o app expira em 7 dias; conta de desenvolvedor paga: 1 ano.
 
 > Os dados ficam só no aparelho até a etapa de sincronização. Desinstalar o app apaga os registros.
+
+## Servidor (Supabase) — sincronização em tempo real
+
+Pasta `supabase/`:
+1. `001_esquema.sql` — tabelas, permissões (RLS), bucket de fotos e tempo real. Rode uma vez no **SQL Editor**.
+2. Crie os usuários em **Authentication → Users → Add user** (marque *Auto Confirm User*).
+3. `002_administrador.sql` — marca o administrador (troque o e-mail).
+4. `003_nomes_dos_usuarios.sql` — nomes exibidos nas anotações.
+
+Regras: todos veem todas as obras; registro do dia (efetivo/equipamentos/ritmo) pode ser alterado por qualquer usuário (fica "editado por"); anotações e fotos só podem ser alteradas/excluídas pelo autor ou pelo administrador.
+
+O app funciona sem internet: grava no aparelho e envia quando houver conexão (`src/sync`). As permissões foram testadas num Postgres local com `supabase/teste/rodar.sh`.

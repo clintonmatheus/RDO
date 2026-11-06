@@ -1,4 +1,5 @@
 import { diaDaSemana } from './datas';
+import type { Usuario } from './usuario';
 
 export const FUNCOES = ['Mestre de Obra', 'Servente', 'Pedreiro', 'Eletricista', 'Encanador', 'Pintor'] as const;
 export const EQUIPAMENTOS = ['Serra mármore', 'Furadeira', 'Martelete', 'Betoneira', 'Andaime'] as const;
@@ -22,8 +23,10 @@ export interface RegistroDiario {
   efetivo: Record<Funcao, number>;
   equipamentos: Record<Equipamento, number>;
   ritmo: Ritmo;
-  anotacoes: string[];
   semExpediente?: { motivo: string };
+  /** Última alteração (exibida como "editado por Fulano às HH:MM"). */
+  atualizadoEm?: string;
+  atualizadoPor?: { id: string; nome: string };
 }
 
 export interface NovoRegistro {
@@ -32,8 +35,9 @@ export interface NovoRegistro {
   efetivo?: Partial<Record<Funcao, number>>;
   equipamentos?: Partial<Record<Equipamento, number>>;
   ritmo?: Ritmo;
-  anotacoes?: string[];
   semExpediente?: string;
+  autor?: Usuario;
+  agora?: string;
 }
 
 function validarQuantidades(valores: Record<string, number | undefined>): void {
@@ -58,8 +62,9 @@ export function criarRegistroDiario(novo: NovoRegistro): RegistroDiario {
     efetivo: { ...EFETIVO_VAZIO, ...novo.efetivo },
     equipamentos: { ...EQUIPAMENTOS_VAZIO, ...novo.equipamentos },
     ritmo: novo.ritmo ?? 'normal',
-    anotacoes: (novo.anotacoes ?? []).map((a) => a.trim()).filter((a) => a.length > 0),
   };
+  if (novo.autor) registro.atualizadoPor = { id: novo.autor.id, nome: novo.autor.nome };
+  if (novo.agora) registro.atualizadoEm = novo.agora;
 
   if (novo.semExpediente !== undefined) {
     const motivo = novo.semExpediente.trim();

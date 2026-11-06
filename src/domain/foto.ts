@@ -14,6 +14,12 @@ export interface Foto {
   /** Verdadeiro só para fotos tiradas pela câmera do app. */
   dataConfiavel: boolean;
   descricao?: string;
+  /** Caminho do arquivo no servidor, depois de enviado. */
+  caminhoRemoto?: string;
+  autorId?: string;
+  autorNome?: string;
+  atualizadaEm?: string;
+  excluida?: boolean;
 }
 
 export interface NovaFoto {

@@ -1,4 +1,5 @@
 import { FlatList, Pressable, Text, View } from 'react-native';
+import type { ReactNode } from 'react';
 import type { Obra } from '../domain/obras';
 import { Cabecalho } from './Cabecalho';
 import { estilos } from './estilos';
@@ -6,9 +7,10 @@ import { estilos } from './estilos';
 interface Props {
   obras: Obra[];
   onAbrir: (obra: Obra) => void;
+  topo?: ReactNode;
 }
 
-export function ListaObrasTela({ obras, onAbrir }: Props) {
+export function ListaObrasTela({ obras, onAbrir, topo }: Props) {
   return (
     <View style={estilos.tela}>
       <Cabecalho logo titulo="Obras" subtitulo="Diário de obra" />
@@ -16,6 +18,7 @@ export function ListaObrasTela({ obras, onAbrir }: Props) {
         contentContainerStyle={estilos.conteudo}
         data={obras}
         keyExtractor={(o) => o.id}
+        ListHeaderComponent={topo ? <>{topo}</> : undefined}
         renderItem={({ item }) => (
           <Pressable testID="obra-item" style={estilos.card} onPress={() => onAbrir(item)}>
             <Text style={estilos.etiqueta}>{item.orgao}</Text>
