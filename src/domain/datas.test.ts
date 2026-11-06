@@ -57,3 +57,15 @@ describe('motivoPadraoSemExpediente', () => {
     expect(motivoPadraoSemExpediente('2026-11-06')).toBeUndefined();
   });
 });
+
+import { periodoDoMes } from './datas';
+describe('periodoDoMes', () => {
+  it('retorna primeiro e último dia do mês', () => {
+    expect(periodoDoMes('2026-11-05')).toEqual({ inicio: '2026-11-01', fim: '2026-11-30' });
+    expect(periodoDoMes('2026-12-31')).toEqual({ inicio: '2026-12-01', fim: '2026-12-31' });
+  });
+  it('trata fevereiro bissexto', () => {
+    expect(periodoDoMes('2028-02-10').fim).toBe('2028-02-29');
+    expect(periodoDoMes('2026-02-10').fim).toBe('2026-02-28');
+  });
+});

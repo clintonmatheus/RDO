@@ -5,8 +5,9 @@ import type { Obra } from '../domain/obras';
 import { totalEfetivo, type RegistroDiario } from '../domain/registro';
 import type { Foto } from '../domain/foto';
 import type { RepositorioFotos, RepositorioRegistros } from '../storage/contrato';
+import { montarDiarioMensal } from '../diarios/cbtu';
 import { montarDiarioSemanal, type DiarioSemanal } from '../diarios/semanal';
-import { periodoSemanal } from '../domain/datas';
+import { periodoDoMes, periodoSemanal } from '../domain/datas';
 import { estilos } from './estilos';
 
 const DIAS = 14;
@@ -59,11 +60,22 @@ export function DiasObraTela({ obra, hoje, registros, fotos, gerarPdf, onAbrir, 
     await gerarPdf(montarDiarioSemanal(obra, hoje, regs, todas));
   }
 
+  async function gerarMensal() {
+    const { inicio, fim } = periodoDoMes(hoje);
+    const [regs, todas] = await Promise.all([registros.listar(obra.id, inicio, fim), fotos.listarPorObra(obra.id)]);
+    await gerarPdf(montarDiarioMensal(obra, hoje, regs, todas));
+  }
+
   if (!porDia) return null;
   return (
     <ScrollView style={estilos.tela} contentContainerStyle={estilos.conteudo}>
       <Pressable testID="voltar" onPress={onVoltar}><Text style={estilos.subtitulo}>‹ Obras</Text></Pressable>
       <Text style={estilos.titulo}>{obra.nome}</Text>
+      {obra.tipoDiario === 'diario' && (
+        <Pressable testID="gerar-mensal" style={estilos.botao} onPress={gerarMensal}>
+          <Text style={estilos.botaoTexto}>Gerar diário do mês (PDF)</Text>
+        </Pressable>
+      )}
       {obra.tipoDiario === 'semanal' && (
         <Pressable testID="gerar-semanal" style={estilos.botao} onPress={gerarSemanal}>
           <Text style={estilos.botaoTexto}>Gerar diário da semana (PDF)</Text>

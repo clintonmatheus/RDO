@@ -59,3 +59,12 @@ export function motivoPadraoSemExpediente(data: string): string | undefined {
   const d = diaDaSemana(data);
   return d === 'sábado' || d === 'domingo' ? 'Fim de semana' : undefined;
 }
+
+/** Primeiro e último dia do mês da data informada. */
+export function periodoDoMes(data: string): { inicio: string; fim: string } {
+  diaDaSemana(data); // valida
+  const [a, m] = data.split('-').map(Number);
+  const inicio = `${a}-${String(m).padStart(2, '0')}-01`;
+  const proximo = m === 12 ? `${a + 1}-01-01` : `${a}-${String(m + 1).padStart(2, '0')}-01`;
+  return { inicio, fim: adicionarDias(proximo, -1) };
+}

@@ -27,6 +27,11 @@ export interface DiarioSemanal {
 export function montarDiarioSemanal(obra: Obra, dataNaSemana: string, registros: RegistroDiario[], fotos: Foto[]): DiarioSemanal {
   if (obra.tipoDiario !== 'semanal' || !obra.inicioSemana) throw new Error('Obra sem diário semanal');
   const periodo = periodoSemanal(dataNaSemana, obra.inicioSemana);
+  return { obra, periodo, dias: montarDias(obra, periodo, registros, fotos) };
+}
+
+/** Um item por dia do período, combinando registros, fotos e o padrão de fim de semana. */
+export function montarDias(obra: Obra, periodo: { inicio: string; fim: string }, registros: RegistroDiario[], fotos: Foto[]): DiaDoDiario[] {
   const dias: DiaDoDiario[] = [];
   for (let d = periodo.inicio; d <= periodo.fim; d = adicionarDias(d, 1)) {
     const r = registros.find((x) => x.obraId === obra.id && x.data === d);
@@ -53,10 +58,10 @@ export function montarDiarioSemanal(obra: Obra, dataNaSemana: string, registros:
       });
     }
   }
-  return { obra, periodo, dias };
+  return dias;
 }
 
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+export const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 export function diarioSemanalHtml(diario: DiarioSemanal, srcDaFoto: (f: Foto) => string): string {
   const { obra, periodo, dias } = diario;

@@ -82,3 +82,27 @@ describe('DiasObraTela — ajustes', () => {
     expect(screen.getByTestId('status-2026-11-04')).not.toHaveTextContent('efetivo');
   });
 });
+
+describe('DiasObraTela — diário mensal do CBTU', () => {
+  async function abrirObra(o: (typeof OBRAS_INICIAIS)[number], gerarPdf = jest.fn(async () => {})) {
+    await render(
+      <DiasObraTela obra={o} hoje="2026-11-05" registros={new RepositorioRegistrosMemoria()} fotos={new RepositorioFotosMemoria()}
+        gerarPdf={gerarPdf} onAbrir={() => {}} onVoltar={() => {}} />,
+    );
+    return gerarPdf;
+  }
+
+  it('gera o PDF do mês atual na obra do CBTU', async () => {
+    const gerar = await abrirObra(OBRAS_INICIAIS[0]);
+    await fireEvent.press(await screen.findByTestId('gerar-mensal'));
+    expect(gerar).toHaveBeenCalledTimes(1);
+    expect((gerar.mock.calls[0] as any[])[0].periodo).toEqual({ inicio: '2026-11-01', fim: '2026-11-30' });
+    expect(screen.queryByTestId('gerar-semanal')).toBeNull();
+  });
+
+  it('obra semanal não mostra o botão mensal', async () => {
+    await abrirObra(OBRAS_INICIAIS[1]);
+    await screen.findByTestId('gerar-semanal');
+    expect(screen.queryByTestId('gerar-mensal')).toBeNull();
+  });
+});
