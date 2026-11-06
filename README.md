@@ -36,3 +36,22 @@ React Native + Expo + TypeScript. Desenvolvimento orientado a testes (TDD) com J
 - Diário do CBTU em PDF (paisagem) para qualquer período: mês atual, mês anterior/seguinte ou datas livres (ex.: período de medição).
 - Diário semanal SEINFRA com navegação entre semanas.
 - Identidade visual: cabeçalho grafite com logomarca do Grupo Passos, ícone do app e cartões com cores de status.
+
+## App instalável (sem depender do computador)
+
+As compilações rodam na nuvem do GitHub (aba **Actions**), sem Mac e sem Android Studio.
+
+### Android (.apk)
+1. GitHub → **Actions** → *Gerar app Android (APK)* → **Run workflow**.
+2. Ao terminar (cerca de 15 min), abra a execução e baixe o arquivo **RDO-android-N** (ZIP) em *Artifacts*.
+3. Extraia o ZIP, envie o `.apk` aos mestres de obra (WhatsApp, OneDrive) e instale. Se pedir, permita "Instalar apps de fontes desconhecidas".
+4. Para atualizar, instale o `.apk` novo por cima (os dados são mantidos).
+
+### iPhone (.ipa, via Sideloadly)
+1. GitHub → **Actions** → *Gerar app iPhone (.ipa sem assinatura)* → **Run workflow**.
+2. Baixe **RDO-iphone-N**, extraia o `RDO.ipa`.
+3. No Windows, abra o **Sideloadly**, conecte o iPhone, arraste o `.ipa` e informe o Apple ID.
+4. No iPhone: *Ajustes → Privacidade e Segurança → Modo Desenvolvedor* (ativar e reiniciar) e *Ajustes → Geral → VPN e Gerenciamento de Dispositivo* (confiar no perfil).
+5. Apple ID gratuito: o app expira em 7 dias; conta de desenvolvedor paga: 1 ano.
+
+> Os dados ficam só no aparelho até a etapa de sincronização. Desinstalar o app apaga os registros.
