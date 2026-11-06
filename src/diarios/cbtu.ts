@@ -45,7 +45,7 @@ export function diarioCbtuHtml(diario: DiarioMensal, srcDaFoto: (f: Foto) => str
     : '';
 
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><style>
-body{font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#111;margin:20px}
+body{font-family:Helvetica,Arial,sans-serif;font-size:10px;color:#111;margin:0}
 h1{font-size:16px;margin:0}h2{font-size:13px;margin:16px 0 4px}h3{font-size:11px;margin:8px 0 2px}
 table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:3px;vertical-align:top}
 th{background:#eee;font-size:9px}td.n{text-align:center}.suave{color:#666}tr{page-break-inside:avoid}

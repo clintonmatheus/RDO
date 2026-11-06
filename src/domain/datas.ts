@@ -92,3 +92,18 @@ export function periodoMesSeguinte(p: Periodo): Periodo {
 export function deslocarPeriodo(p: Periodo, dias: number): Periodo {
   return { inicio: adicionarDias(p.inicio, dias), fim: adicionarDias(p.fim, dias) };
 }
+
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+/** 0 = domingo … 6 = sábado. */
+export function indiceDiaSemana(data: string): number {
+  diaDaSemana(data); // valida
+  return new Date(`${data}T00:00:00Z`).getUTCDay();
+}
+
+/** "2026-11-15" → "novembro de 2026" */
+export function nomeDoMes(data: string): string {
+  diaDaSemana(data); // valida
+  const [a, m] = data.split('-').map(Number);
+  return `${MESES[m - 1]} de ${a}`;
+}

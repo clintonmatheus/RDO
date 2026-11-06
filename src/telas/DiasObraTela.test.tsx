@@ -18,25 +18,47 @@ async function abrir(onAbrir = jest.fn()) {
 }
 
 describe('DiasObraTela', () => {
-  it('lista 14 dias começando por hoje', async () => {
+  const rotulo = (d: string) => screen.getByTestId(`dia-${d}`).props.accessibilityLabel as string;
+
+  it('mostra o mês de hoje em forma de calendário', async () => {
     await abrir();
-    const dias = await screen.findAllByTestId('dia-item');
-    expect(dias).toHaveLength(14);
-    expect(screen.getByTestId('dia-2026-11-05')).toBeTruthy();
-    expect(screen.getByTestId('dia-2026-10-23')).toBeTruthy();
+    expect(await screen.findAllByTestId('dia-item')).toHaveLength(30);
+    expect(screen.getByTestId('mes-rotulo')).toHaveTextContent('novembro de 2026');
+    for (const d of ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']) expect(screen.getByText(d)).toBeTruthy();
+    expect(screen.getByTestId('dia-2026-11-01')).toBeTruthy();
+    expect(screen.getByTestId('dia-2026-11-30')).toBeTruthy();
   });
 
-  it('mostra o status de cada dia', async () => {
+  it('indica o status de cada dia', async () => {
     await abrir();
-    expect(await screen.findByTestId('status-2026-11-05')).toHaveTextContent('Sem registro');
-    expect(screen.getByTestId('status-2026-11-04')).toHaveTextContent('Registrado · 2 no efetivo · 1 foto');
-    expect(screen.getByTestId('status-2026-11-03')).toHaveTextContent('Sem expediente: Chuva');
+    await screen.findAllByTestId('dia-item');
+    expect(rotulo('2026-11-05')).toContain('Sem registro');
+    expect(rotulo('2026-11-04')).toContain('Registrado · 2 no efetivo · 1 foto');
+    expect(rotulo('2026-11-03')).toContain('Sem expediente: Chuva');
   });
 
   it('abre o dia tocado', async () => {
     const onAbrir = await abrir();
     await fireEvent.press(await screen.findByTestId('dia-2026-11-04'));
     expect(onAbrir).toHaveBeenCalledWith('2026-11-04');
+  });
+
+  it('dias futuros não abrem', async () => {
+    const onAbrir = await abrir();
+    await fireEvent.press(await screen.findByTestId('dia-2026-11-06'));
+    expect(onAbrir).not.toHaveBeenCalled();
+  });
+
+  it('navega para o mês anterior e não avança além do mês atual', async () => {
+    await abrir();
+    await screen.findAllByTestId('dia-item');
+    await fireEvent.press(screen.getByTestId('mes-anterior'));
+    expect(screen.getByTestId('mes-rotulo')).toHaveTextContent('outubro de 2026');
+    expect(await screen.findAllByTestId('dia-item')).toHaveLength(31);
+    await fireEvent.press(screen.getByTestId('mes-proximo'));
+    expect(screen.getByTestId('mes-rotulo')).toHaveTextContent('novembro de 2026');
+    await fireEvent.press(screen.getByTestId('mes-proximo'));
+    expect(screen.getByTestId('mes-rotulo')).toHaveTextContent('novembro de 2026');
   });
 });
 
@@ -69,7 +91,8 @@ describe('DiasObraTela — diário semanal', () => {
 describe('DiasObraTela — ajustes', () => {
   it('fim de semana sem registro aparece como sem expediente', async () => {
     await abrir();
-    expect(await screen.findByTestId('status-2026-11-01')).toHaveTextContent('Sem expediente: Fim de semana');
+    await screen.findAllByTestId('dia-item');
+    expect(screen.getByTestId('dia-2026-11-01').props.accessibilityLabel).toContain('Sem expediente: Fim de semana');
   });
 
   it('obra fora do CBTU não mostra efetivo no status', async () => {
@@ -78,8 +101,10 @@ describe('DiasObraTela — ajustes', () => {
     await registros.salvar(criarRegistroDiario({ obraId: 'ubs', data: '2026-11-04', anotacoes: ['x'] }));
     await render(<DiasObraTela obra={ubs} hoje="2026-11-05" registros={registros} fotos={new RepositorioFotosMemoria()}
       gerarPdf={async () => {}} onAbrir={() => {}} onVoltar={() => {}} />);
-    expect(await screen.findByTestId('status-2026-11-04')).toHaveTextContent('Registrado');
-    expect(screen.getByTestId('status-2026-11-04')).not.toHaveTextContent('efetivo');
+    await screen.findAllByTestId('dia-item');
+    const r = screen.getByTestId('dia-2026-11-04').props.accessibilityLabel as string;
+    expect(r).toContain('Registrado');
+    expect(r).not.toContain('efetivo');
   });
 });
 

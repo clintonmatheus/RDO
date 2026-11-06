@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { montarDiarioCbtu } from '../diarios/cbtu';
 import { montarDiarioSemanal, type DiarioSemanal } from '../diarios/semanal';
 import {
-  adicionarDias, analisarDataBR, deslocarPeriodo, diaDaSemana, formatarDataBR, motivoPadraoSemExpediente,
+  adicionarDias, analisarDataBR, deslocarPeriodo, formatarDataBR, indiceDiaSemana, motivoPadraoSemExpediente, nomeDoMes,
   periodoDoMes, periodoMesAnterior, periodoMesSeguinte, periodoSemanal, type Periodo,
 } from '../domain/datas';
 import type { Foto } from '../domain/foto';
@@ -13,7 +13,7 @@ import type { RepositorioFotos, RepositorioRegistros } from '../storage/contrato
 import { Cabecalho } from './Cabecalho';
 import { cores, estilos } from './estilos';
 
-const DIAS = 14;
+const SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 interface Props {
   obra: Obra;
@@ -51,7 +51,11 @@ function Seta({ id, texto, onPress }: { id: string; texto: string; onPress: () =
 }
 
 export function DiasObraTela({ obra, hoje, registros, fotos, gerarPdf, onAbrir, onVoltar }: Props) {
-  const dias = Array.from({ length: DIAS }, (_, i) => adicionarDias(hoje, -i));
+  const [mes, setMes] = useState<Periodo>(periodoDoMes(hoje));
+  const dias: string[] = [];
+  for (let d = mes.inicio; d <= mes.fim; d = adicionarDias(d, 1)) dias.push(d);
+  const vazios = indiceDiaSemana(mes.inicio);
+  const mesAtual = mes.inicio === periodoDoMes(hoje).inicio;
   const semanal = obra.tipoDiario === 'semanal' && !!obra.inicioSemana;
   const inicial: Periodo = semanal ? periodoSemanal(hoje, obra.inicioSemana!) : periodoDoMes(hoje);
 
@@ -66,7 +70,7 @@ export function DiasObraTela({ obra, hoje, registros, fotos, gerarPdf, onAbrir, 
   useEffect(() => {
     let ativo = true;
     (async () => {
-      const lista = await registros.listar(obra.id, dias[DIAS - 1], dias[0]);
+      const lista = await registros.listar(obra.id, mes.inicio, mes.fim);
       const todas: Foto[] = await fotos.listarPorObra(obra.id);
       if (!ativo) return;
       setPorDia(Object.fromEntries(lista.map((r) => [r.data, r])));
@@ -76,7 +80,7 @@ export function DiasObraTela({ obra, hoje, registros, fotos, gerarPdf, onAbrir, 
     })();
     return () => { ativo = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [obra.id, hoje, registros, fotos]);
+  }, [obra.id, mes.inicio, registros, fotos]);
 
   function aplicar(p: Periodo) {
     setPeriodo(p);
@@ -140,20 +144,54 @@ export function DiasObraTela({ obra, hoje, registros, fotos, gerarPdf, onAbrir, 
           </Pressable>
         </View>
 
-        <Text style={estilos.secao}>Últimos dias</Text>
-        {dias.map((d) => {
-          const s = status(obra, d, porDia[d], fotosDia[d] ?? 0);
-          return (
-            <Pressable key={d} testID={`dia-${d}`} style={[estilos.card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]} onPress={() => onAbrir(d)}>
-              <View style={{ width: 8, alignSelf: 'stretch', borderRadius: 4, backgroundColor: corDoTipo[s.tipo] }} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text testID="dia-item" style={estilos.titulo}>{`${diaDaSemana(d)} ${formatarDataBR(d)}`}</Text>
-                <Text testID={`status-${d}`} style={estilos.subtitulo}>{s.texto}</Text>
-              </View>
-              <Text style={estilos.subtitulo}>›</Text>
+        <Text style={estilos.secao}>Calendário</Text>
+        <View style={estilos.card}>
+          <View style={estilos.linha}>
+            <Seta id="mes-anterior" texto="‹" onPress={() => setMes(periodoMesAnterior(mes))} />
+            <Text testID="mes-rotulo" style={[estilos.titulo, { textTransform: 'capitalize' }]}>{nomeDoMes(mes.inicio)}</Text>
+            <Pressable testID="mes-proximo" disabled={mesAtual} style={[estilos.passo, estilos.passoSec, mesAtual && { opacity: 0.3 }]} onPress={() => setMes(periodoMesSeguinte(mes))}>
+              <Text style={[estilos.passoTexto, estilos.passoTextoSec]}>›</Text>
             </Pressable>
-          );
-        })}
+          </View>
+          <View style={{ flexDirection: 'row' }}>
+            {SEMANA.map((n) => (
+              <Text key={n} style={[estilos.subtitulo, { width: '14.2857%', textAlign: 'center', fontWeight: '600' }]}>{n}</Text>
+            ))}
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            {Array.from({ length: vazios }, (_, i) => <View key={`v${i}`} style={{ width: '14.2857%', height: 52 }} />)}
+            {dias.map((d) => {
+              const s = status(obra, d, porDia[d], fotosDia[d] ?? 0);
+              const futuro = d > hoje;
+              return (
+                <View key={d} style={{ width: '14.2857%', height: 52, padding: 2 }}>
+                  <Pressable
+                    testID={`dia-${d}`}
+                    accessibilityLabel={`${formatarDataBR(d)}: ${s.texto}`}
+                    disabled={futuro}
+                    onPress={() => onAbrir(d)}
+                    style={{
+                      flex: 1, borderRadius: 10, alignItems: 'center', justifyContent: 'center', gap: 4,
+                      backgroundColor: futuro ? 'transparent' : cores.fundo,
+                      borderWidth: d === hoje ? 2 : 0, borderColor: cores.primaria, opacity: futuro ? 0.35 : 1,
+                    }}
+                  >
+                    <Text testID="dia-item" style={{ fontSize: 15, fontWeight: '600', color: cores.texto }}>{String(Number(d.slice(8)))}</Text>
+                    {!futuro && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: corDoTipo[s.tipo] }} />}
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8 }}>
+            {([['registrado', 'Registrado'], ['pendente', 'Pendente'], ['sem-expediente', 'Sem expediente']] as [Tipo, string][]).map(([t, n]) => (
+              <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: corDoTipo[t] }} />
+                <Text style={estilos.subtitulo}>{n}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
       </ScrollView>
     </View>
   );

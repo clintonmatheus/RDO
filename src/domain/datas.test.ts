@@ -94,3 +94,16 @@ describe('navegação de período', () => {
     expect(deslocarPeriodo({ inicio: '2026-10-31', fim: '2026-11-06' }, -7)).toEqual({ inicio: '2026-10-24', fim: '2026-10-30' });
   });
 });
+
+import { indiceDiaSemana, nomeDoMes } from './datas';
+describe('calendário', () => {
+  it('índice do dia da semana (0 = domingo)', () => {
+    expect(indiceDiaSemana('2026-11-01')).toBe(0);
+    expect(indiceDiaSemana('2026-10-01')).toBe(4);
+    expect(indiceDiaSemana('2026-11-07')).toBe(6);
+  });
+  it('nome do mês em português', () => {
+    expect(nomeDoMes('2026-11-15')).toBe('novembro de 2026');
+    expect(nomeDoMes('2027-03-01')).toBe('março de 2027');
+  });
+});

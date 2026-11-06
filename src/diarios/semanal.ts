@@ -89,7 +89,7 @@ ${detalhes}
   }
 
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><style>
-body{font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#111;margin:24px}
+body{font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#111;margin:0}
 h1{font-size:18px;margin:0}h3{font-size:13px;margin:12px 0 4px;text-transform:capitalize}
 section{border-top:1px solid #bbb;padding-bottom:6px;page-break-inside:avoid}
 .suave{color:#666}.fotos{display:flex;flex-wrap:wrap;gap:6px}

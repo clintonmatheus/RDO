@@ -12,7 +12,7 @@ describe('Raiz', () => {
     expect(screen.getByText('05/11/2026')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('mais-Servente'));
     await fireEvent.press(screen.getByTestId('salvar'));
-    await waitFor(() => expect(screen.getAllByTestId('dia-item')).toHaveLength(14));
+    await waitFor(() => expect(screen.getAllByTestId('dia-item')).toHaveLength(30));
     await fireEvent.press(screen.getByTestId('voltar'));
     expect(screen.getAllByTestId('obra-item')).toHaveLength(4);
     expect((await repo.obter('cbtu-barauna', '2026-11-05'))?.efetivo.Servente).toBe(1);

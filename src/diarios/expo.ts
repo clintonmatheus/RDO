@@ -3,6 +3,7 @@ import * as Sharing from 'expo-sharing';
 import { File } from 'expo-file-system';
 import type { Foto } from '../domain/foto';
 import { diarioCbtuHtml } from './cbtu';
+import { MARGENS_PDF } from './pdf';
 import { diarioSemanalHtml, type DiarioSemanal } from './semanal';
 
 /** Gera o PDF do diário semanal (fotos embutidas em base64) e abre a folha de compartilhamento. */
@@ -18,8 +19,8 @@ export async function gerarPdfSemanal(diario: DiarioSemanal): Promise<void> {
   // CBTU: tabela larga, página A4 em paisagem; SEINFRA: A4 em retrato.
   const { uri } = await Print.printToFileAsync(
     mensal
-      ? { html: diarioCbtuHtml(diario, src), width: 842, height: 595 }
-      : { html: diarioSemanalHtml(diario, src), width: 595, height: 842 },
+      ? { html: diarioCbtuHtml(diario, src), width: 842, height: 595, margins: MARGENS_PDF }
+      : { html: diarioSemanalHtml(diario, src), width: 595, height: 842, margins: MARGENS_PDF },
   );
   await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
 }
