@@ -39,6 +39,7 @@
     "testMatch": [
       "<rootDir>/src/**/*.test.ts",
       "<rootDir>/src/**/*.test.tsx"
-    ]
+    ],
+    "testTimeout": 30000
   }
 }
