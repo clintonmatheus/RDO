@@ -1,4 +1,4 @@
-import { diaDaSemana } from './datas';
+import { diaDaSemana, horaLocal } from './datas';
 import type { Usuario } from './usuario';
 
 export interface Anotacao {
@@ -12,6 +12,8 @@ export interface Anotacao {
   atualizadaEm: string;
   /** Exclusão lógica, para que a exclusão chegue aos outros aparelhos. */
   excluida: boolean;
+  /** Quem fez a última edição do texto (o autor ou o administrador). */
+  editadaPor?: { id: string; nome: string; admin: boolean };
 }
 
 interface NovaAnotacao {
@@ -47,7 +49,10 @@ function exigirPermissao(usuario: Usuario, a: Anotacao) {
 
 export function editarAnotacao(a: Anotacao, texto: string, usuario: Usuario, agora: string): Anotacao {
   exigirPermissao(usuario, a);
-  return { ...a, texto: limpar(texto), atualizadaEm: agora };
+  return {
+    ...a, texto: limpar(texto), atualizadaEm: agora,
+    editadaPor: { id: usuario.id, nome: usuario.nome, admin: usuario.admin },
+  };
 }
 
 export function excluirAnotacao(a: Anotacao, usuario: Usuario, agora: string): Anotacao {
@@ -57,4 +62,13 @@ export function excluirAnotacao(a: Anotacao, usuario: Usuario, agora: string): A
 
 export function anotacoesVisiveis(lista: Anotacao[]): Anotacao[] {
   return lista.filter((a) => !a.excluida).sort((x, y) => x.criadaEm.localeCompare(y.criadaEm));
+}
+
+/** Texto exibido abaixo da anotação quando ela foi editada. */
+export function descricaoEdicao(a: Anotacao): string | undefined {
+  if (!a.editadaPor) return undefined;
+  const hora = horaLocal(a.atualizadaEm);
+  if (a.editadaPor.id === a.autorId) return `Editado às ${hora}`;
+  const papel = a.editadaPor.admin ? ' (administrador)' : '';
+  return `Editado por ${a.editadaPor.nome}${papel} às ${hora}`;
 }

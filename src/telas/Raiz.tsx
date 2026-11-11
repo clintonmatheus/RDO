@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { Dados } from '../dados/dados';
 import type { DiarioSemanal } from '../diarios/semanal';
+import type { Periodo } from '../domain/datas';
+import type { Foto } from '../domain/foto';
 import { OBRAS_INICIAIS, type Obra } from '../domain/obras';
 import type { ServicoFotos } from '../fotos/servico';
 import type { EstadoSync } from '../sync/agendador';
@@ -14,6 +16,7 @@ interface Props {
   servicoFotos: ServicoFotos;
   hoje: string;
   gerarPdf: (diario: DiarioSemanal) => Promise<void>;
+  gerarRelatorio?: (args: { obra: Obra; periodo: Periodo; numeroMedicao: string; fotos: Foto[] }) => Promise<void>;
   /** Incrementado quando chegam dados de outros aparelhos. */
   versao?: number;
   estadoSync?: EstadoSync;
@@ -22,7 +25,7 @@ interface Props {
 }
 
 /** Navegação mínima por estado: obras → dias da obra → registro do dia. */
-export function Raiz({ dados, servicoFotos, hoje, gerarPdf, versao = 0, estadoSync, onSincronizar, onSair }: Props) {
+export function Raiz({ dados, servicoFotos, hoje, gerarPdf, gerarRelatorio, versao = 0, estadoSync, onSincronizar, onSair }: Props) {
   const [obra, setObra] = useState<Obra>();
   const [dia, setDia] = useState<string>();
   if (!obra) {
@@ -32,7 +35,7 @@ export function Raiz({ dados, servicoFotos, hoje, gerarPdf, versao = 0, estadoSy
     );
   }
   if (!dia) {
-    return <DiasObraTela obra={obra} hoje={hoje} dados={dados} versao={versao} gerarPdf={gerarPdf} onAbrir={setDia} onVoltar={() => setObra(undefined)} />;
+    return <DiasObraTela obra={obra} hoje={hoje} dados={dados} versao={versao} gerarPdf={gerarPdf} gerarRelatorio={gerarRelatorio} onAbrir={setDia} onVoltar={() => setObra(undefined)} />;
   }
   return (
     <RegistroDiaTela obra={obra} data={dia} hoje={hoje} dados={dados} versao={versao}

@@ -77,3 +77,17 @@ describe('Fotos do dia', () => {
     expect(screen.queryByTestId('remover-foto')).toBeNull();
   });
 });
+
+describe('Foto ampliada', () => {
+  it('abre a foto em tela cheia ao tocar e fecha', async () => {
+    await abrir('2026-11-05');
+    await fireEvent.press(screen.getByTestId('tirar-foto'));
+    await waitFor(() => expect(screen.getAllByTestId('foto-item')).toHaveLength(1));
+    expect(screen.queryByTestId('foto-ampliada')).toBeNull();
+    await fireEvent.press(screen.getByTestId('abrir-foto'));
+    expect(screen.getByTestId('foto-ampliada')).toBeTruthy();
+    expect(screen.getByTestId('foto-ampliada-legenda')).toHaveTextContent('05/11/2026 · Teste');
+    await fireEvent.press(screen.getByTestId('fechar-foto'));
+    expect(screen.queryByTestId('foto-ampliada')).toBeNull();
+  });
+});

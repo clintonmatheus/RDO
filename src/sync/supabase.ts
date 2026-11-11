@@ -141,6 +141,12 @@ export class AutenticacaoSupabase implements Autenticacao {
     await this.sb.auth.signOut();
   }
 
+  async atualizarPerfil(): Promise<Usuario | undefined> {
+    const { data } = await this.sb.auth.getSession();
+    if (!data.session) return undefined;
+    try { return await this.carregarPerfil(data.session.user.id); } catch { return undefined; }
+  }
+
   private async carregarPerfil(id: string): Promise<Usuario> {
     const { data, error } = await this.sb.from('perfis').select('id, nome, admin').eq('id', id).single();
     if (error || !data) throw erroDeRede(error);

@@ -67,3 +67,10 @@ Pasta `supabase/`:
 Regras: todos veem todas as obras; registro do dia (efetivo/equipamentos/ritmo) pode ser alterado por qualquer usuário (fica "editado por"); anotações e fotos só podem ser alteradas/excluídas pelo autor ou pelo administrador.
 
 O app funciona sem internet: grava no aparelho e envia quando houver conexão (`src/sync`). As permissões foram testadas num Postgres local com `supabase/teste/rodar.sh`.
+
+## Relatório fotográfico (PowerPoint)
+
+Na tela de dias da obra: período, nº da medição e **Gerar relatório fotográfico**. O app monta um `.pptx` no modelo da empresa
+(capa + páginas com 4 fotos e a data como legenda), reduz as fotos e abre o compartilhamento.
+O modelo vem de um relatório real: `python3 scripts/montar_modelo_relatorio.py ORIGEM.pptx assets/relatorio/modelo-aln.pptx`
+e depois regenere `src/relatorio/modeloAln.ts` (base64). Dados da capa por obra: `src/domain/obras.ts` (`relatorio`).

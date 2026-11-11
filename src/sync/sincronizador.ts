@@ -4,6 +4,8 @@ import type { Lote, Remoto } from './remoto';
 
 export interface ResultadoSync { enviados: number; recebidos: number }
 
+const TABELA: Record<TipoPendencia, string> = { registro: 'registros', anotacao: 'anotacoes', foto: 'fotos' };
+
 /**
  * Sincronização "offline primeiro":
  * 1. envia a fila de alterações locais (fotos: arquivo antes dos dados);
@@ -45,7 +47,11 @@ export class Sincronizador {
         await this.enviarItem(p.tipo, p.chave);
       } catch (e) {
         if ((e as Error).message === 'Sem conexão') throw e;
-        recusa = e as Error; // item recusado fica na fila; segue com os demais
+        // Recusado pelo servidor (ex.: sem permissão): descarta a alteração local e
+        // força baixar a tabela de novo, para a cópia local voltar à versão do servidor.
+        recusa = e as Error;
+        await this.a.fila.remover(p.tipo, p.chave);
+        await this.a.cursores.definir(TABELA[p.tipo], '');
         continue;
       }
       await this.a.fila.remover(p.tipo, p.chave);

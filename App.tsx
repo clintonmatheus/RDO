@@ -4,6 +4,7 @@ import { ActivityIndicator, AppState, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Dados } from './src/dados/dados';
 import { gerarPdfSemanal } from './src/diarios/expo';
+import { gerarRelatorioFotografico } from './src/relatorio/expo';
 import { dataLocal } from './src/domain/datas';
 import type { Usuario } from './src/domain/usuario';
 import { servicoFotosDoApp } from './src/fotos/expo';
@@ -33,7 +34,13 @@ export default function App() {
   useEffect(() => {
     (async () => {
       setArmazenamento(criarArmazenamentoSqlite(await abrirBancoDoApp()));
-      setUsuario((await auth.usuarioAtual()) ?? null);
+      const atual = (await auth.usuarioAtual()) ?? null;
+      setUsuario(atual);
+      // O perfil guardado pode estar desatualizado (ex.: permissão de administrador alterada).
+      if (atual) {
+        const novo = await auth.atualizarPerfil();
+        if (novo && (novo.admin !== atual.admin || novo.nome !== atual.nome)) setUsuario(novo);
+      }
     })();
   }, []);
 
@@ -67,7 +74,7 @@ export default function App() {
   else if (!usuario || !motor) conteudo = <LoginTela entrar={(e, s) => auth.entrar(e, s)} onEntrou={setUsuario} />;
   else {
     conteudo = (
-      <Raiz dados={motor.dados} servicoFotos={servicoFotosDoApp} gerarPdf={gerarPdfSemanal} hoje={dataLocal(agora())}
+      <Raiz dados={motor.dados} servicoFotos={servicoFotosDoApp} gerarPdf={gerarPdfSemanal} gerarRelatorio={gerarRelatorioFotografico} hoje={dataLocal(agora())}
         versao={versao} estadoSync={estado} onSincronizar={() => void motor.agendador.agora()} onSair={sair} />
     );
   }

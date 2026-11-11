@@ -1,4 +1,4 @@
-import { anotacoesVisiveis, criarAnotacao, editarAnotacao, excluirAnotacao, podeAlterar } from './anotacao';
+import { anotacoesVisiveis, criarAnotacao, descricaoEdicao, editarAnotacao, excluirAnotacao, podeAlterar } from './anotacao';
 import type { Usuario } from './usuario';
 
 const ana: Usuario = { id: 'u-ana', nome: 'Ana', admin: false };
@@ -37,6 +37,7 @@ describe('permissões', () => {
     expect(a.texto).toBe('Laje concretada');
     expect(a.atualizadaEm).toBe(T2);
     expect(a.autorNome).toBe('Ana');
+    expect(a.editadaPor).toEqual({ id: 'u-adm', nome: 'Clinton', admin: true });
     expect(() => editarAnotacao(nova(), 'x', beto, T2)).toThrow('Sem permissão');
     expect(() => editarAnotacao(nova(), '  ', ana, T2)).toThrow('Anotação vazia');
   });
@@ -55,5 +56,17 @@ describe('anotacoesVisiveis', () => {
     const b = criarAnotacao({ id: 'b', obraId: 'ubs', data: '2026-11-06', texto: 'primeira', autor: beto, agora: T1 });
     const c = excluirAnotacao(criarAnotacao({ id: 'c', obraId: 'ubs', data: '2026-11-06', texto: 'x', autor: ana, agora: T1 }), ana, T2);
     expect(anotacoesVisiveis([a, b, c]).map((x) => x.texto)).toEqual(['primeira', 'segunda']);
+  });
+});
+
+describe('descricaoEdicao', () => {
+  it('sem edição não mostra nada', () => {
+    expect(descricaoEdicao(nova())).toBeUndefined();
+  });
+  it('edição pelo próprio autor', () => {
+    expect(descricaoEdicao(editarAnotacao(nova(), 'x', ana, T2))).toBe('Editado às 10:00');
+  });
+  it('edição pelo administrador identifica o administrador', () => {
+    expect(descricaoEdicao(editarAnotacao(nova(), 'x', adm, T2))).toBe('Editado por Clinton (administrador) às 10:00');
   });
 });

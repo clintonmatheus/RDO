@@ -6,4 +6,6 @@ export interface Autenticacao {
   /** Lança 'E-mail ou senha incorretos' ou 'Sem conexão'. */
   entrar(email: string, senha: string): Promise<Usuario>;
   sair(): Promise<void>;
+  /** Relê nome e papel (administrador) no servidor; undefined se offline. */
+  atualizarPerfil(): Promise<Usuario | undefined>;
 }

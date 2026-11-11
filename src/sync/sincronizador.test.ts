@@ -138,7 +138,7 @@ describe('Sincronizador', () => {
 });
 
 describe('Sincronizador — item recusado pelo servidor', () => {
-  it('não trava a fila: envia os demais e informa o erro, mantendo o recusado', async () => {
+  it('não trava a fila: envia os demais, informa o erro e descarta o recusado', async () => {
     const remoto = new RemotoFalso();
     const a = aparelho(ana, remoto);
     const ruim = await a.dados.adicionarAnotacao('ubs', '2026-11-06', 'recusada');
@@ -146,7 +146,7 @@ describe('Sincronizador — item recusado pelo servidor', () => {
     remoto.recusar.add(ruim.id);
     await expect(a.sync.sincronizar()).rejects.toThrow('Sem permissão no servidor');
     const fila = await a.armazenamento.fila.listar();
-    expect(fila.map((p) => p.chave)).toEqual([ruim.id]);
+    expect(fila).toEqual([]);
     expect(remoto.totalEnvios).toBe(1);
     expect((await a.dados.listarAnotacoes('ubs')).map((x) => x.texto).sort()).toEqual(['boa', 'recusada']);
   });
@@ -165,5 +165,23 @@ describe('Sincronizador — contagem de recebidos', () => {
     remoto.ignorarCursor = true;
     expect((await b.sync.sincronizar()).recebidos).toBe(0);
     expect((await a.sync.sincronizar()).recebidos).toBe(0);
+  });
+});
+
+describe('Sincronizador — edição recusada pelo servidor', () => {
+  it('a cópia local volta a ser a do servidor', async () => {
+    const remoto = new RemotoFalso();
+    const a = aparelho(ana, remoto);
+    const b = aparelho(beto, remoto);
+    const n = await a.dados.adicionarAnotacao('ubs', '2026-11-06', 'Original da Ana');
+    await a.sync.sincronizar();
+    await b.sync.sincronizar();
+    // simula uma edição indevida no aparelho do Beto (ex.: permissão desatualizada)
+    await b.armazenamento.anotacoes.salvar({ ...n, texto: 'alterada pelo Beto' });
+    await b.armazenamento.fila.adicionar('anotacao', n.id);
+    remoto.recusar.add(n.id);
+    await expect(b.sync.sincronizar()).rejects.toThrow('Sem permissão no servidor');
+    expect((await b.dados.listarAnotacoes('ubs'))[0].texto).toBe('Original da Ana');
+    expect(await b.armazenamento.fila.listar()).toEqual([]);
   });
 });

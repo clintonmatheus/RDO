@@ -159,6 +159,7 @@ describe('RegistroDiaTela — anotações por autor', () => {
     await fireEvent.changeText(screen.getByTestId('editar-texto'), 'Do Beto (corrigido)');
     await fireEvent.press(screen.getByTestId('confirmar-edicao'));
     expect(await screen.findByText('Do Beto (corrigido)')).toBeTruthy();
+    expect(screen.getByTestId('anotacao-edicao')).toHaveTextContent(/^Editado por Clinton \(administrador\) às \d{2}:\d{2}$/);
     await fireEvent.press(screen.getByTestId('excluir-anotacao'));
     await waitFor(() => expect(screen.queryByTestId('anotacao-item')).toBeNull());
     expect(await dados.listarAnotacoes('ubs')).toEqual([]);

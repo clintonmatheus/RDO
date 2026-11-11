@@ -10,6 +10,7 @@ import type { Foto } from '../domain/foto';
 import type { Obra } from '../domain/obras';
 import { totalEfetivo, type RegistroDiario } from '../domain/registro';
 import type { Dados } from '../dados/dados';
+import { fotosDoPeriodo } from '../relatorio/relatorio';
 import { Cabecalho } from './Cabecalho';
 import { cores, estilos } from './estilos';
 
@@ -22,6 +23,7 @@ interface Props {
   /** Muda quando chegam dados de outros aparelhos (recarrega a tela). */
   versao?: number;
   gerarPdf: (diario: DiarioSemanal) => Promise<void>;
+  gerarRelatorio?: (args: { obra: Obra; periodo: Periodo; numeroMedicao: string; fotos: Foto[] }) => Promise<void>;
   onAbrir: (data: string) => void;
   onVoltar: () => void;
 }
@@ -52,7 +54,7 @@ function Seta({ id, texto, onPress }: { id: string; texto: string; onPress: () =
   );
 }
 
-export function DiasObraTela({ obra, hoje, dados, gerarPdf, onAbrir, onVoltar, versao = 0 }: Props) {
+export function DiasObraTela({ obra, hoje, dados, gerarPdf, gerarRelatorio, onAbrir, onVoltar, versao = 0 }: Props) {
   const [mes, setMes] = useState<Periodo>(periodoDoMes(hoje));
   const dias: string[] = [];
   for (let d = mes.inicio; d <= mes.fim; d = adicionarDias(d, 1)) dias.push(d);
@@ -69,6 +71,12 @@ export function DiasObraTela({ obra, hoje, dados, gerarPdf, onAbrir, onVoltar, v
   const [ate, setAte] = useState(formatarDataBR(inicial.fim));
   const [erro, setErro] = useState<string>();
   const [gerando, setGerando] = useState(false);
+  const mesAtualPeriodo = periodoDoMes(hoje);
+  const [relDe, setRelDe] = useState(formatarDataBR(mesAtualPeriodo.inicio));
+  const [relAte, setRelAte] = useState(formatarDataBR(mesAtualPeriodo.fim));
+  const [medicao, setMedicao] = useState('');
+  const [erroRel, setErroRel] = useState<string>();
+  const [gerandoRel, setGerandoRel] = useState(false);
 
   useEffect(() => {
     let ativo = true;
@@ -132,6 +140,23 @@ export function DiasObraTela({ obra, hoje, dados, gerarPdf, onAbrir, onVoltar, v
     }
   }
 
+  async function gerarRel() {
+    if (!gerarRelatorio) return;
+    setErroRel(undefined);
+    try {
+      const periodoRel: Periodo = { inicio: analisarDataBR(relDe), fim: analisarDataBR(relAte) };
+      if (periodoRel.inicio > periodoRel.fim) throw new Error('Período inválido');
+      const fotosRel = fotosDoPeriodo(await dados.listarFotosDaObra(obra.id), periodoRel);
+      if (!fotosRel.length) throw new Error('Nenhuma foto no período');
+      setGerandoRel(true);
+      await gerarRelatorio({ obra, periodo: periodoRel, numeroMedicao: medicao, fotos: fotosRel });
+    } catch (e) {
+      setErroRel((e as Error).message || 'Não foi possível gerar o relatório');
+    } finally {
+      setGerandoRel(false);
+    }
+  }
+
   if (!porDia) return null;
   return (
     <View style={estilos.tela}>
@@ -156,6 +181,23 @@ export function DiasObraTela({ obra, hoje, dados, gerarPdf, onAbrir, onVoltar, v
             <Text style={estilos.botaoTexto}>{gerando ? 'Gerando…' : semanal ? 'Gerar diário da semana (PDF)' : 'Gerar diário do período (PDF)'}</Text>
           </Pressable>
         </View>
+
+        {gerarRelatorio && (
+          <>
+            <Text style={estilos.secao}>Relatório fotográfico (PowerPoint)</Text>
+            <View style={[estilos.card, { gap: 8 }]}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TextInput testID="relatorio-de" style={[estilos.entrada, { flex: 1 }]} value={relDe} onChangeText={setRelDe} placeholder="De" keyboardType="numbers-and-punctuation" />
+                <TextInput testID="relatorio-ate" style={[estilos.entrada, { flex: 1 }]} value={relAte} onChangeText={setRelAte} placeholder="Até" keyboardType="numbers-and-punctuation" />
+              </View>
+              <TextInput testID="medicao-numero" style={estilos.entrada} value={medicao} onChangeText={setMedicao} placeholder="Nº da medição (ex.: 10)" keyboardType="number-pad" />
+              {erroRel && <Text style={estilos.erro}>{erroRel}</Text>}
+              <Pressable testID="gerar-relatorio" style={[estilos.botao, gerandoRel && { opacity: 0.6 }]} disabled={gerandoRel} onPress={gerarRel}>
+                <Text style={estilos.botaoTexto}>{gerandoRel ? 'Gerando…' : 'Gerar relatório fotográfico'}</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
 
         <Text style={estilos.secao}>Calendário</Text>
         <View style={estilos.card}>

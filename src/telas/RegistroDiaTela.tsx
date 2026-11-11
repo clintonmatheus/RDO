@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import type { Dados } from '../dados/dados';
-import { podeAlterar, type Anotacao } from '../domain/anotacao';
+import { descricaoEdicao, podeAlterar, type Anotacao } from '../domain/anotacao';
 import { diaDaSemana, formatarDataBR, horaLocal, motivoPadraoSemExpediente } from '../domain/datas';
 import type { Foto } from '../domain/foto';
 import type { Obra } from '../domain/obras';
@@ -11,6 +11,7 @@ import {
 } from '../domain/registro';
 import type { ServicoFotos } from '../fotos/servico';
 import { Cabecalho } from './Cabecalho';
+import { FotoAmpliada } from './FotoAmpliada';
 import { cores, estilos } from './estilos';
 
 interface Props {
@@ -62,6 +63,7 @@ function ItemAnotacao({ a, pode, onEditar, onExcluir }: {
       ) : (
         <Text style={{ fontSize: 16, color: cores.texto }}>{a.texto}</Text>
       )}
+      {descricaoEdicao(a) && <Text testID="anotacao-edicao" style={[estilos.subtitulo, { fontStyle: 'italic', fontSize: 12 }]}>{descricaoEdicao(a)}</Text>}
       <View style={[estilos.linha, { paddingVertical: 0 }]}>
         <Text testID="anotacao-autor" style={estilos.subtitulo}>{`${a.autorNome} · ${horaLocal(a.criadaEm)}`}</Text>
         {pode && !editando && (
@@ -91,6 +93,7 @@ export function RegistroDiaTela({ obra, data, hoje, dados, servicoFotos, onVolta
   const [anotacoes, setAnotacoes] = useState<Anotacao[]>([]);
   const [novaNota, setNovaNota] = useState('');
   const [fotos, setFotos] = useState<Foto[]>([]);
+  const [ampliada, setAmpliada] = useState<Foto>();
   const [erro, setErro] = useState<string>();
   const [erroNota, setErroNota] = useState<string>();
   /** Há mudanças no formulário ainda não salvas: atualizações de outros aparelhos não as sobrescrevem. */
@@ -256,7 +259,9 @@ export function RegistroDiaTela({ obra, data, hoje, dados, servicoFotos, onVolta
           {fotos.map((f) => (
             <View key={f.id} testID="foto-item" style={{ gap: 2 }}>
               {f.uri ? (
-                <Image source={{ uri: f.uri }} style={{ width: 100, height: 100, borderRadius: 8 }} />
+                <Pressable testID="abrir-foto" onPress={() => setAmpliada(f)}>
+                  <Image source={{ uri: f.uri }} style={{ width: 100, height: 100, borderRadius: 8 }} />
+                </Pressable>
               ) : (
                 <View style={{ width: 100, height: 100, borderRadius: 8, backgroundColor: cores.borda, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={estilos.subtitulo}>Baixando…</Text>
@@ -270,6 +275,7 @@ export function RegistroDiaTela({ obra, data, hoje, dados, servicoFotos, onVolta
           ))}
         </View>
       </ScrollView>
+      <FotoAmpliada foto={ampliada} onFechar={() => setAmpliada(undefined)} />
     </View>
   );
 }
