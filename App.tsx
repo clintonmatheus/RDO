@@ -4,7 +4,7 @@ import { ActivityIndicator, AppState, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Dados } from './src/dados/dados';
 import { gerarPdfSemanal } from './src/diarios/expo';
-import { gerarRelatorioFotografico } from './src/relatorio/expo';
+import { exportarFotosZip } from './src/fotos/exportacao-expo';
 import { dataLocal } from './src/domain/datas';
 import type { Usuario } from './src/domain/usuario';
 import { servicoFotosDoApp } from './src/fotos/expo';
@@ -74,7 +74,7 @@ export default function App() {
   else if (!usuario || !motor) conteudo = <LoginTela entrar={(e, s) => auth.entrar(e, s)} onEntrou={setUsuario} />;
   else {
     conteudo = (
-      <Raiz dados={motor.dados} servicoFotos={servicoFotosDoApp} gerarPdf={gerarPdfSemanal} gerarRelatorio={gerarRelatorioFotografico} hoje={dataLocal(agora())}
+      <Raiz dados={motor.dados} servicoFotos={servicoFotosDoApp} gerarPdf={gerarPdfSemanal} exportarFotos={exportarFotosZip} hoje={dataLocal(agora())}
         versao={versao} estadoSync={estado} onSincronizar={() => void motor.agendador.agora()} onSair={sair} />
     );
   }

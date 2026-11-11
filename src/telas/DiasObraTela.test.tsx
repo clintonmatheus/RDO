@@ -205,36 +205,34 @@ describe('DiasObraTela — anotações no PDF', () => {
   });
 });
 
-describe('DiasObraTela — relatório fotográfico', () => {
+describe('DiasObraTela — exportar fotos', () => {
   const ubs = OBRAS_INICIAIS.find((o) => o.id === 'ubs')!;
-  async function abrirComFotos(gerarRelatorio = jest.fn(async () => {})) {
+  async function abrirComFotos(exportarFotos = jest.fn(async () => {})) {
     const a = criarArmazenamentoMemoria();
     await a.fotos.salvar(criarFoto({ id: 'f2', obraId: 'ubs', uri: 'u2', origem: 'camera', capturadaEm: '2026-11-04T15:00:00.000Z' }));
     await a.fotos.salvar(criarFoto({ id: 'f1', obraId: 'ubs', uri: 'u1', origem: 'camera', capturadaEm: '2026-11-02T15:00:00.000Z' }));
     await a.fotos.salvar(criarFoto({ id: 'out', obraId: 'ubs', uri: 'u3', origem: 'camera', capturadaEm: '2026-10-20T15:00:00.000Z' }));
     await render(<DiasObraTela obra={ubs} hoje="2026-11-05" dados={dadosDeTeste(undefined, a).dados} gerarPdf={async () => {}}
-      gerarRelatorio={gerarRelatorio} onAbrir={() => {}} onVoltar={() => {}} />);
-    return gerarRelatorio;
+      exportarFotos={exportarFotos} onAbrir={() => {}} onVoltar={() => {}} />);
+    return exportarFotos;
   }
 
-  it('gera o relatório com as fotos do período e o nº da medição', async () => {
+  it('exporta as fotos do período, por padrão o mês atual', async () => {
     const g = await abrirComFotos();
-    expect((await screen.findByTestId('relatorio-de')).props.value).toBe('01/11/2026');
-    expect(screen.getByTestId('relatorio-ate').props.value).toBe('30/11/2026');
-    await fireEvent.changeText(screen.getByTestId('medicao-numero'), '10');
-    await fireEvent.press(screen.getByTestId('gerar-relatorio'));
+    expect((await screen.findByTestId('fotos-de')).props.value).toBe('01/11/2026');
+    expect(screen.getByTestId('fotos-ate').props.value).toBe('30/11/2026');
+    await fireEvent.press(screen.getByTestId('exportar-fotos'));
     const arg = (g.mock.calls[0] as any[])[0];
     expect(arg.obra.id).toBe('ubs');
-    expect(arg.numeroMedicao).toBe('10');
     expect(arg.periodo).toEqual({ inicio: '2026-11-01', fim: '2026-11-30' });
     expect(arg.fotos.map((f: any) => f.id)).toEqual(['f1', 'f2']);
   });
 
   it('avisa quando não há fotos no período', async () => {
     const g = await abrirComFotos();
-    await fireEvent.changeText(await screen.findByTestId('relatorio-de'), '01/09/2026');
-    await fireEvent.changeText(screen.getByTestId('relatorio-ate'), '30/09/2026');
-    await fireEvent.press(screen.getByTestId('gerar-relatorio'));
+    await fireEvent.changeText(await screen.findByTestId('fotos-de'), '01/09/2026');
+    await fireEvent.changeText(screen.getByTestId('fotos-ate'), '30/09/2026');
+    await fireEvent.press(screen.getByTestId('exportar-fotos'));
     expect(await screen.findByText('Nenhuma foto no período')).toBeTruthy();
     expect(g).not.toHaveBeenCalled();
   });

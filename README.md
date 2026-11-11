@@ -68,9 +68,8 @@ Regras: todos veem todas as obras; registro do dia (efetivo/equipamentos/ritmo) 
 
 O app funciona sem internet: grava no aparelho e envia quando houver conexão (`src/sync`). As permissões foram testadas num Postgres local com `supabase/teste/rodar.sh`.
 
-## Relatório fotográfico (PowerPoint)
+## Exportar fotos para o relatório fotográfico
 
-Na tela de dias da obra: período, nº da medição e **Gerar relatório fotográfico**. O app monta um `.pptx` no modelo da empresa
-(capa + páginas com 4 fotos e a data como legenda), reduz as fotos e abre o compartilhamento.
-O modelo vem de um relatório real: `python3 scripts/montar_modelo_relatorio.py ORIGEM.pptx assets/relatorio/modelo-aln.pptx`
-e depois regenere `src/relatorio/modeloAln.ts` (base64). Dados da capa por obra: `src/domain/obras.ts` (`relatorio`).
+Na tela de dias da obra: informe o período e toque em **Exportar fotos (ZIP)**. O app gera um ZIP com uma pasta por data
+(`2026-11-03/2026-11-03_01.jpg`…), no tamanho em que as fotos foram guardadas, e abre o compartilhamento (Arquivos/OneDrive).
+Quem monta o relatório fotográfico escolhe as fotos no computador.
