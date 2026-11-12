@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, AppState, View } from 'react-native';
+import { ActivityIndicator, AppState, KeyboardAvoidingView, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Dados } from './src/dados/dados';
 import { gerarPdfSemanal } from './src/diarios/expo';
@@ -83,7 +83,8 @@ export default function App() {
     <SafeAreaProvider>
       <View style={{ flex: 1, backgroundColor: cores.fundo }}>
         <SafeAreaView edges={['top']} style={{ backgroundColor: cores.cabecalho }} />
-        {conteudo}
+        {/* Android (edge-to-edge) e iPhone: o conteúdo encolhe acima do teclado e continua rolando. */}
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>{conteudo}</KeyboardAvoidingView>
         <StatusBar style="light" />
       </View>
     </SafeAreaProvider>
