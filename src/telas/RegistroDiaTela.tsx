@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import type { Dados } from '../dados/dados';
 import { descricaoEdicao, podeAlterar, type Anotacao } from '../domain/anotacao';
@@ -41,13 +42,37 @@ function Contador({ nome, valor, onMudar }: { nome: string; valor: number; onMud
   );
 }
 
+type NomeIcone = keyof typeof Ionicons.glyphMap;
+
+function Titulo({ icone, texto, quantidade }: { icone: NomeIcone; texto: string; quantidade?: number }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+      <Ionicons name={icone} size={18} color={cores.primaria} />
+      <Text style={{ fontSize: 13, fontWeight: '800', color: cores.chipTexto, textTransform: 'uppercase', letterSpacing: 0.5 }}>{texto}</Text>
+      {!!quantidade && (
+        <Text style={{ fontSize: 12, fontWeight: '700', color: cores.chipTexto, backgroundColor: cores.fundo, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 1, overflow: 'hidden' }}>{quantidade}</Text>
+      )}
+    </View>
+  );
+}
+
+function BotaoFoto({ testID, icone, texto, onPress }: { testID: string; icone: NomeIcone; texto: string; onPress: () => void }) {
+  return (
+    <Pressable testID={testID} onPress={onPress}
+      style={{ width: 96, height: 96, borderRadius: 10, borderWidth: 1.5, borderStyle: 'dashed', borderColor: cores.primaria, alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+      <Ionicons name={icone} size={26} color={cores.primaria} />
+      <Text style={{ color: cores.primaria, fontWeight: '600', fontSize: 13 }}>{texto}</Text>
+    </Pressable>
+  );
+}
+
 function ItemAnotacao({ a, pode, onEditar, onExcluir }: {
   a: Anotacao; pode: boolean; onEditar: (texto: string) => Promise<void>; onExcluir: () => Promise<void>;
 }) {
   const [editando, setEditando] = useState(false);
   const [texto, setTexto] = useState(a.texto);
   return (
-    <View testID="anotacao-item" style={[estilos.card, { gap: 6 }]}>
+    <View testID="anotacao-item" style={{ gap: 4, borderLeftWidth: 3, borderLeftColor: cores.borda, paddingLeft: 10 }}>
       {editando ? (
         <>
           <TextInput testID="editar-texto" style={estilos.entrada} multiline value={texto} onChangeText={setTexto} />
@@ -179,44 +204,48 @@ export function RegistroDiaTela({ obra, data, hoje, dados, servicoFotos, onVolta
         <Text style={estilos.cabecalhoSub}>{diaDaSemana(data)}</Text>
         <Text style={estilos.cabecalhoTitulo}>{formatarDataBR(data)}</Text>
       </Cabecalho>
-      <ScrollView style={estilos.tela} contentContainerStyle={[estilos.conteudo, { paddingBottom: 48 }]}
+      <ScrollView style={estilos.tela} contentContainerStyle={estilos.conteudo}
         keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets>
 
-        <Pressable testID="sem-expediente" style={[estilos.chip, { alignSelf: 'flex-start' }, semExpediente && estilos.chipAtivo]} onPress={() => mudar(setSemExpediente)(!semExpediente)}>
-          <Text style={semExpediente ? estilos.chipTextoAtivo : estilos.chipTexto}>Dia sem expediente</Text>
-        </Pressable>
+        <View style={estilos.segmento}>
+          {([false, true] as const).map((sem) => (
+            <Pressable key={String(sem)} testID={sem ? 'sem-expediente' : 'com-expediente'} onPress={() => mudar(setSemExpediente)(sem)}
+              style={[estilos.segmentoItem, semExpediente === sem && estilos.segmentoAtivo]}>
+              <Text style={[estilos.segmentoTexto, semExpediente === sem && { color: '#fff' }]}>{sem ? 'Sem expediente' : 'Com expediente'}</Text>
+            </Pressable>
+          ))}
+        </View>
         {semExpediente && (
-          <TextInput testID="motivo" style={estilos.entrada} placeholder="Motivo (ex.: chuva, feriado)" value={motivo} onChangeText={mudar(setMotivo)} />
+          <TextInput testID="motivo" style={estilos.entrada} placeholder="Motivo (ex.: chuva, feriado)" placeholderTextColor={cores.suave} value={motivo} onChangeText={mudar(setMotivo)} />
         )}
 
         {!semExpediente && obra.controlaEfetivo && (
-          <>
-            <Text style={estilos.secao}>Efetivo</Text>
-            <View style={estilos.card}>
-              {FUNCOES.map((f) => (
-                <Contador key={f} nome={f} valor={efetivo[f]} onMudar={(v) => mudar(setEfetivo)({ ...efetivo, [f]: v })} />
-              ))}
-              <Text testID="total-efetivo" style={estilos.titulo}>{`Total: ${totalEfetivo({ efetivo })}`}</Text>
-            </View>
-          </>
+          <View style={estilos.card}>
+            <Titulo icone="people-outline" texto="Efetivo" />
+            {FUNCOES.map((f) => (
+              <Contador key={f} nome={f} valor={efetivo[f]} onMudar={(v) => mudar(setEfetivo)({ ...efetivo, [f]: v })} />
+            ))}
+            <Text testID="total-efetivo" style={estilos.titulo}>{`Total: ${totalEfetivo({ efetivo })}`}</Text>
+          </View>
         )}
 
         {obra.controlaEfetivo && (
           <>
-            <Text style={estilos.secao}>Equipamentos</Text>
             <View style={estilos.card}>
+              <Titulo icone="construct-outline" texto="Equipamentos" />
               {EQUIPAMENTOS.map((e) => (
                 <Contador key={e} nome={e} valor={equip[e]} onMudar={(v) => mudar(setEquip)({ ...equip, [e]: v })} />
               ))}
             </View>
-
-            <Text style={estilos.secao}>Ritmo dos trabalhos</Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {RITMOS.map((r) => (
-                <Pressable key={r} testID={`ritmo-${r}`} style={[estilos.chip, ritmo === r && estilos.chipAtivo]} onPress={() => mudar(setRitmo)(r)}>
-                  <Text style={ritmo === r ? estilos.chipTextoAtivo : estilos.chipTexto}>{r}</Text>
-                </Pressable>
-              ))}
+            <View style={[estilos.card, { gap: 10 }]}>
+              <Titulo icone="speedometer-outline" texto="Ritmo dos trabalhos" />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {RITMOS.map((r) => (
+                  <Pressable key={r} testID={`ritmo-${r}`} style={[estilos.chip, ritmo === r && estilos.chipAtivo]} onPress={() => mudar(setRitmo)(r)}>
+                    <Text style={ritmo === r ? estilos.chipTextoAtivo : estilos.chipTexto}>{r}</Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
           </>
         )}
@@ -228,51 +257,49 @@ export function RegistroDiaTela({ obra, data, hoje, dados, servicoFotos, onVolta
         )}
         {erro && <Text style={estilos.erro}>{erro}</Text>}
         <Pressable testID="salvar" style={estilos.botao} onPress={salvar}>
-          <Text style={estilos.botaoTexto}>{obra.controlaEfetivo ? 'Salvar registro' : 'Salvar'}</Text>
+          <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+          <Text style={estilos.botaoTexto}>{obra.controlaEfetivo ? 'Salvar registro' : 'Salvar o dia'}</Text>
         </Pressable>
 
-        <Text style={estilos.secao}>Anotações</Text>
-        {anotacoes.map((a) => (
-          <ItemAnotacao key={a.id} a={a} pode={podeAlterar(usuario, a)}
-            onEditar={(t) => acaoNota(() => dados.editarAnotacao(a.id, t))}
-            onExcluir={() => acaoNota(() => dados.excluirAnotacao(a.id))} />
-        ))}
-        <TextInput testID="nova-anotacao" style={[estilos.entrada, { minHeight: 80 }]} multiline scrollEnabled={false}
-          value={novaNota} onChangeText={setNovaNota} placeholder="Serviço executado, ocorrência…" />
-        {erroNota && <Text style={estilos.erro}>{erroNota}</Text>}
-        <Pressable testID="adicionar-anotacao" style={[estilos.chip, estilos.chipAtivo, { alignSelf: 'flex-start' }]} onPress={adicionarNota}>
-          <Text style={estilos.chipTextoAtivo}>Adicionar anotação</Text>
-        </Pressable>
-
-        <Text style={estilos.secao}>Fotos</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {data === hoje && (
-            <Pressable testID="tirar-foto" style={estilos.chip} onPress={() => adicionarFoto('camera')}>
-              <Text style={estilos.chipTexto}>Tirar foto</Text>
-            </Pressable>
-          )}
-          <Pressable testID="foto-galeria" style={estilos.chip} onPress={() => adicionarFoto('galeria')}>
-            <Text style={estilos.chipTexto}>Galeria</Text>
+        <View style={[estilos.card, { gap: 12 }]}>
+          <Titulo icone="create-outline" texto="Anotações" quantidade={anotacoes.length} />
+          {anotacoes.map((a) => (
+            <ItemAnotacao key={a.id} a={a} pode={podeAlterar(usuario, a)}
+              onEditar={(t) => acaoNota(() => dados.editarAnotacao(a.id, t))}
+              onExcluir={() => acaoNota(() => dados.excluirAnotacao(a.id))} />
+          ))}
+          <TextInput testID="nova-anotacao" style={[estilos.entrada, { minHeight: 80, textAlignVertical: 'top' }]} multiline scrollEnabled={false}
+            value={novaNota} onChangeText={setNovaNota} placeholder="Serviço executado, ocorrência…" placeholderTextColor={cores.suave} />
+          {erroNota && <Text style={estilos.erro}>{erroNota}</Text>}
+          <Pressable testID="adicionar-anotacao" style={estilos.botao} onPress={adicionarNota}>
+            <Ionicons name="add" size={20} color="#fff" />
+            <Text style={estilos.botaoTexto}>Adicionar anotação</Text>
           </Pressable>
         </View>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {fotos.map((f) => (
-            <View key={f.id} testID="foto-item" style={{ gap: 2 }}>
-              {f.uri ? (
-                <Pressable testID="abrir-foto" onPress={() => setAmpliada(f)}>
-                  <Image source={{ uri: f.uri }} style={{ width: 100, height: 100, borderRadius: 8 }} />
-                </Pressable>
-              ) : (
-                <View style={{ width: 100, height: 100, borderRadius: 8, backgroundColor: cores.borda, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={estilos.subtitulo}>Baixando…</Text>
-                </View>
-              )}
-              {f.autorNome && <Text style={[estilos.subtitulo, { fontSize: 12 }]}>{f.autorNome}</Text>}
-              {podeAlterar(usuario, { autorId: f.autorId ?? usuario.id }) && (
-                <Pressable testID="remover-foto" onPress={() => removerFoto(f.id)}><Text style={estilos.erro}>Remover</Text></Pressable>
-              )}
-            </View>
-          ))}
+
+        <View style={[estilos.card, { gap: 12 }]}>
+          <Titulo icone="images-outline" texto="Fotos do dia" quantidade={fotos.length} />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {fotos.map((f) => (
+              <View key={f.id} testID="foto-item" style={{ gap: 2, width: 96 }}>
+                {f.uri ? (
+                  <Pressable testID="abrir-foto" onPress={() => setAmpliada(f)}>
+                    <Image source={{ uri: f.uri }} style={{ width: 96, height: 96, borderRadius: 10 }} />
+                  </Pressable>
+                ) : (
+                  <View style={{ width: 96, height: 96, borderRadius: 10, backgroundColor: cores.borda, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={[estilos.subtitulo, { fontSize: 12 }]}>Baixando…</Text>
+                  </View>
+                )}
+                {f.autorNome && <Text style={[estilos.subtitulo, { fontSize: 12 }]} numberOfLines={1}>{f.autorNome}</Text>}
+                {podeAlterar(usuario, { autorId: f.autorId ?? usuario.id }) && (
+                  <Pressable testID="remover-foto" onPress={() => removerFoto(f.id)} hitSlop={6}><Text style={[estilos.erro, { fontSize: 13 }]}>Remover</Text></Pressable>
+                )}
+              </View>
+            ))}
+            {data === hoje && <BotaoFoto testID="tirar-foto" icone="camera-outline" texto="Câmera" onPress={() => adicionarFoto('camera')} />}
+            <BotaoFoto testID="foto-galeria" icone="image-outline" texto="Galeria" onPress={() => adicionarFoto('galeria')} />
+          </View>
         </View>
       </ScrollView>
       <FotoAmpliada foto={ampliada} onFechar={() => setAmpliada(undefined)} />

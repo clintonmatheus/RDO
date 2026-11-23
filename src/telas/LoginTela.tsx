@@ -30,7 +30,7 @@ export function LoginTela({ entrar, onEntrou }: Props) {
 
   return (
     <View style={estilos.tela}>
-      <Cabecalho logo titulo="Entrar" subtitulo="Diário de obra" />
+      <Cabecalho titulo="Entrar" subtitulo="Diário de obra" />
       <ScrollView contentContainerStyle={estilos.conteudo} keyboardShouldPersistTaps="handled">
         <View style={[estilos.card, { gap: 12 }]}>
           <TextInput testID="email" style={estilos.entrada} placeholder="E-mail" value={email} onChangeText={setEmail}

@@ -110,7 +110,7 @@ describe('RegistroDiaTela — obras SEINFRA e fim de semana', () => {
 
   it('encarregado pode desmarcar o padrão do sábado', async () => {
     const { dados, onVoltar } = await abrir({ obra: ubs, dia: '2026-11-07' });
-    await fireEvent.press(screen.getByTestId('sem-expediente'));
+    await fireEvent.press(screen.getByTestId('com-expediente'));
     expect(screen.queryByTestId('motivo')).toBeNull();
     await fireEvent.press(screen.getByTestId('salvar'));
     await waitFor(() => expect(onVoltar).toHaveBeenCalled());
