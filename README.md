@@ -73,3 +73,14 @@ O app funciona sem internet: grava no aparelho e envia quando houver conexão (`
 Na tela de dias da obra: informe o período e toque em **Exportar fotos (ZIP)**. O app gera um ZIP com uma pasta por data
 (`2026-11-03/2026-11-03_01.jpg`…), no tamanho em que as fotos foram guardadas, e abre o compartilhamento (Arquivos/OneDrive).
 Quem monta o relatório fotográfico escolhe as fotos no computador.
+
+## Cópia diária dos dados (backup)
+
+- **O que faz** (`.github/workflows/backup.yml`): todo dia às 03:17 (Brasília) acessa o Supabase, copia as tabelas (`registros`, `anotacoes`, lista de `fotos`, `perfis`) e os logins (sem senhas), criptografa (AES-256) e guarda como artefato por 90 dias. As fotos em si ficam só no Supabase. O acesso diário também **mantém o projeto gratuito ativo** (o Supabase pausa projetos sem uso por 7 dias).
+- **Segredos** (Settings → Secrets and variables → Actions → New repository secret):
+  - `SUPABASE_SERVICE_KEY`: chave secreta do projeto do RDO (Project Settings → API Keys → Secret key). Nunca vai para o app.
+  - `BACKUP_SENHA`: senha com 12 caracteres ou mais para abrir as cópias; guarde-a fora do GitHub.
+- **Rodar na hora:** Actions → Cópia diária dos dados → Run workflow.
+- **Abrir uma cópia:** baixe o artefato e rode `node scripts/backup/abrir.mjs rdo-backup-AAAA-MM-DD.tar.gz.enc`; descompacte o `.tar.gz`.
+- **Restaurar:** `node scripts/backup/restaurar.mjs sql <pasta> > restaurar.sql` e rode no SQL Editor (grava por cima pela chave, não apaga nada; só entram linhas de logins que existem).
+- Testes: `npm run test:backup`.
