@@ -1,8 +1,8 @@
 import 'react-native-url-polyfill/auto';
-import 'expo-sqlite/localStorage/install';
+import './local';
 import { AppState } from 'react-native';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { Directory, File, Paths } from 'expo-file-system';
+import { baixarFoto, lerBytes } from '../fotos/arquivos';
 import type { Anotacao } from '../domain/anotacao';
 import type { Foto } from '../domain/foto';
 import type { RegistroDiario } from '../domain/registro';
@@ -61,7 +61,7 @@ export class RemotoSupabase implements Remoto {
 
   async enviarArquivoFoto(f: Foto) {
     const caminho = `${f.obraId}/${f.id}.jpg`;
-    const bytes = await new File(f.uri).bytes();
+    const bytes = await lerBytes(f.uri);
     const { error } = await this.sb.storage.from('fotos').upload(caminho, bytes, { contentType: 'image/jpeg', upsert: true });
     if (error) throw erroDeRede(error);
     return caminho;
@@ -71,12 +71,7 @@ export class RemotoSupabase implements Remoto {
     if (!f.caminhoRemoto) throw new Error('Foto sem arquivo no servidor');
     const { data, error } = await this.sb.storage.from('fotos').createSignedUrl(f.caminhoRemoto, 300);
     if (error || !data) throw erroDeRede(error);
-    const pasta = new Directory(Paths.document, 'fotos');
-    if (!pasta.exists) pasta.create();
-    const destino = new File(pasta, `${f.id}.jpg`);
-    if (destino.exists) destino.delete();
-    const baixado = await File.downloadFileAsync(data.signedUrl, destino);
-    return baixado.uri;
+    return baixarFoto(data.signedUrl, f.id);
   }
 
   private async baixar<T>(tabela: string, cursor?: string): Promise<Lote<T>> {

@@ -10,8 +10,7 @@ import type { Usuario } from './src/domain/usuario';
 import { servicoFotosDoApp } from './src/fotos/expo';
 import { novoId } from './src/fotos/id';
 import type { Armazenamento } from './src/storage/contrato';
-import { abrirBancoDoApp } from './src/storage/expo';
-import { criarArmazenamentoSqlite } from './src/storage/sqlite';
+import { abrirArmazenamento } from './src/storage/abrir';
 import { AgendadorSync, type EstadoSync } from './src/sync/agendador';
 import { Sincronizador } from './src/sync/sincronizador';
 import { AutenticacaoSupabase, criarClienteSupabase, RemotoSupabase } from './src/sync/supabase';
@@ -33,7 +32,7 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      setArmazenamento(criarArmazenamentoSqlite(await abrirBancoDoApp()));
+      setArmazenamento(await abrirArmazenamento());
       const atual = (await auth.usuarioAtual()) ?? null;
       setUsuario(atual);
       // O perfil guardado pode estar desatualizado (ex.: permissão de administrador alterada).

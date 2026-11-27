@@ -57,7 +57,7 @@ export class RepositorioAnotacoesMemoria implements RepositorioAnotacoes {
 }
 
 export class FilaEnvioMemoria implements FilaEnvio {
-  private itens: Pendencia[] = [];
+  protected itens: Pendencia[] = [];
   async adicionar(tipo: TipoPendencia, chave: string) {
     if (!(await this.contem(tipo, chave))) this.itens.push({ tipo, chave });
   }
@@ -71,7 +71,7 @@ export class FilaEnvioMemoria implements FilaEnvio {
 }
 
 export class CursoresMemoria implements Cursores {
-  private dados = new Map<string, string>();
+  protected dados = new Map<string, string>();
   async obter(t: string) { return this.dados.get(t); }
   async definir(t: string, v: string) { this.dados.set(t, v); }
 }

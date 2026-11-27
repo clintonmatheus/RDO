@@ -21,7 +21,9 @@
       "package": "br.com.rdo.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "RDO - Diário de Obra",
+      "shortName": "RDO"
     },
     "plugins": [
       [

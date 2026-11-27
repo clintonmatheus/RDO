@@ -84,3 +84,11 @@ Quem monta o relatório fotográfico escolhe as fotos no computador.
 - **Abrir uma cópia:** baixe o artefato e rode `node scripts/backup/abrir.mjs rdo-backup-AAAA-MM-DD.tar.gz.enc`; descompacte o `.tar.gz`.
 - **Restaurar:** `node scripts/backup/restaurar.mjs sql <pasta> > restaurar.sql` e rode no SQL Editor (grava por cima pela chave, não apaga nada; só entram linhas de logins que existem).
 - Testes: `npm run test:backup`.
+
+## Versão web e iPhone (atalho na tela inicial)
+
+Para quem usa iPhone (ou computador), há uma versão web que funciona como o app: login, registros, anotações, fotos (câmera ou galeria), sincronização, PDF do diário e ZIP de fotos.
+- **Publicar:** GitHub → Actions → **Publicar versão para computador (web)** → Run workflow. Endereço: `https://clintonmatheus.github.io/RDO/` (ative Settings → Pages → Deploy from a branch → gh-pages). Em repositório privado, o GitHub Pages exige plano pago.
+- **Instalar no iPhone:** Safari → Compartilhar → **Adicionar à Tela de Início**. O passo `scripts/pwa.mjs` grava o manifesto e os ícones (`public/icones/`, gerados de `assets/icon.png`).
+- **Offline:** os dados e as fotos ficam no navegador (IndexedDB, `src/storage/abrir.web.ts`) e sobem quando há internet. O iPhone pode apagar os dados de sites que ficam muitas semanas sem uso; por isso, sincronize antes de deixar o app parado. Fotos são reduzidas a 1600 px.
+- **PDF:** abre a impressão do navegador; escolha "Salvar como PDF" ou compartilhar.
