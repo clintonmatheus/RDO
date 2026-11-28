@@ -8,7 +8,9 @@ create function auth.uid() returns uuid language sql stable as $$
 $$;
 create schema storage;
 create table storage.buckets (id text primary key, name text, public boolean);
-create table storage.objects (id serial primary key, bucket_id text, name text);
+-- owner_id: o Supabase Storage preenche com o login de quem enviou o arquivo
+create table storage.objects (id serial primary key, bucket_id text, name text,
+  owner_id text default current_setting('request.jwt.claim.sub', true));
 alter table storage.objects enable row level security;
 create publication supabase_realtime;
 grant usage on schema public, auth, storage to authenticated;

@@ -134,3 +134,15 @@ describe('anotações no diário', () => {
     expect(html).not.toContain('Teste');
   });
 });
+
+describe('diarioSemanalHtml com dados adulterados no servidor', () => {
+  it('não insere quantidades que não são números como HTML', () => {
+    const obra = { ...ubs, controlaEfetivo: true };
+    const r = criarRegistroDiario({ obraId: obra.id, data: '2026-11-05', efetivo: { Servente: 3 } });
+    const ataque = '"><script>alert(1)</script>';
+    const adulterado = { ...r, efetivo: { ...r.efetivo, Pintor: ataque as unknown as number } };
+    const h = diarioSemanalHtml(montarDiarioSemanal(obra, '2026-11-05', [adulterado], []), (f) => f.uri);
+    expect(h).not.toContain('<script>');
+    expect(h).toContain('Efetivo (3)');
+  });
+});

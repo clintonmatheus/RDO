@@ -35,10 +35,10 @@ export function diarioCbtuHtml(diario: DiarioMensal, srcDaFoto: (f: Foto) => str
       const texto = d.status === 'sem-expediente' ? `Sem expediente: ${esc(d.motivo ?? '')}` : 'Sem registro';
       return `<tr class="vazio"><td>${dia}</td><td colspan="${FUNCOES.length + 3}" class="suave">${texto}</td></tr>`;
     }
-    const qtd = FUNCOES.map((f) => `<td class="n">${d.efetivo.find((e) => e.funcao === f)?.quantidade ?? ''}</td>`).join('');
-    const equip = d.equipamentos.map((e) => `${esc(e.equipamento)}: ${e.quantidade}`).join(' · ');
+    const qtd = FUNCOES.map((f) => `<td class="n">${esc(d.efetivo.find((e) => e.funcao === f)?.quantidade ?? '')}</td>`).join('');
+    const equip = d.equipamentos.map((e) => `${esc(e.equipamento)}: ${esc(e.quantidade)}`).join(' · ');
     const notas = d.anotacoes.map((a) => esc(a)).join('<br/>');
-    return `<tr><td>${dia}</td>${qtd}<td class="n">${d.efetivoTotal}</td><td>${esc(d.ritmo ?? '')}</td><td>${notas}${equip ? `<br/><i>${equip}</i>` : ''}</td></tr>`;
+    return `<tr><td>${dia}</td>${qtd}<td class="n">${esc(d.efetivoTotal)}</td><td>${esc(d.ritmo ?? '')}</td><td>${notas}${equip ? `<br/><i>${equip}</i>` : ''}</td></tr>`;
   });
 
   const comFotos = dias.filter((d) => d.fotos.length > 0);

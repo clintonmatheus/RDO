@@ -46,8 +46,17 @@ function validarQuantidades(valores: Record<string, number | undefined>): void {
   }
 }
 
+/**
+ * Quantidade vinda do servidor ou do aparelho como número seguro: o servidor aceita qualquer JSON em "dados",
+ * então um texto no lugar de um número vira 0 em vez de ir para a tela ou para o HTML do PDF.
+ */
+export function quantidadeSegura(v: unknown): number {
+  const n = typeof v === 'number' ? v : Number.NaN;
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
 export function totalEfetivo(r: Pick<RegistroDiario, 'efetivo'>): number {
-  return Object.values(r.efetivo).reduce((soma, n) => soma + n, 0);
+  return Object.values(r.efetivo ?? {}).reduce<number>((soma, n) => soma + quantidadeSegura(n), 0);
 }
 
 export function criarRegistroDiario(novo: NovoRegistro): RegistroDiario {
