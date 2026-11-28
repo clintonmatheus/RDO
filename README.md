@@ -64,6 +64,7 @@ Pasta `supabase/`:
 3. `002_administrador.sql` — marca o administrador (troque o e-mail).
 4. `003_nomes_dos_usuarios.sql` — nomes exibidos nas anotações.
 5. `004_auditoria_e_fotos.sql` — auditoria (guarda a versão anterior de cada alteração, consultas prontas no fim do arquivo) e só o autor ou o administrador substitui o arquivo de uma foto. Se rodar a `001` de novo, rode a `004` depois.
+6. `005_vincular_dados.sql` — o servidor recusa conteúdo que não corresponde à linha (id, obra, dia, autor ou exclusão), para ninguém se passar pela anotação ou foto de outra pessoa.
 6. Em **Authentication → Sign In / Providers**, desligue **Allow new users to sign up**: os logins são criados só por você, em Authentication → Users.
 
 Regras: todos veem todas as obras; registro do dia (efetivo/equipamentos/ritmo) pode ser alterado por qualquer usuário (fica "editado por"); anotações e fotos só podem ser alteradas/excluídas pelo autor ou pelo administrador.

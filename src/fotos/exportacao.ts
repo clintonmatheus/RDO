@@ -9,7 +9,7 @@ export interface ArquivoZip { caminho: string; bytes: Uint8Array }
 export function fotosDoPeriodo(fotos: Foto[], periodo: Periodo): Foto[] {
   return fotos
     .filter((f) => !f.excluida && !!f.uri && f.data >= periodo.inicio && f.data <= periodo.fim)
-    .sort((a, b) => a.data.localeCompare(b.data) || a.capturadaEm.localeCompare(b.capturadaEm));
+    .sort((a, b) => (a.data ?? '').localeCompare(b.data ?? '') || (a.capturadaEm ?? '').localeCompare(b.capturadaEm ?? ''));
 }
 
 function extensao(uri: string): string {

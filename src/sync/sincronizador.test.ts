@@ -185,3 +185,21 @@ describe('Sincronizador — edição recusada pelo servidor', () => {
     expect(await b.armazenamento.fila.listar()).toEqual([]);
   });
 });
+
+describe('item malformado vindo do servidor', () => {
+  it('é ignorado e não trava a sincronização nem a lista do dia', async () => {
+    const remoto = new RemotoFalso();
+    const a = aparelho(ana, remoto);
+    const b = aparelho(beto, remoto);
+    await a.dados.adicionarAnotacao('ubs', '2026-11-06', 'Reboco');
+    await a.sync.sincronizar();
+    // gravados direto na API, sem o app: anotação sem data de criação e foto com id que vira caminho de arquivo
+    await remoto.enviarAnotacao({ id: 'ruim1', obraId: 'ubs', data: '2026-11-06', texto: 'x' } as never);
+    await remoto.enviarAnotacao({ id: 'ruim2', obraId: 'ubs', data: '2026-11-06', texto: 'y' } as never);
+    await remoto.enviarFoto({ id: '../x', obraId: 'ubs', data: '2026-11-06', capturadaEm: '2026-11-06T12:00:00Z', uri: '', origem: 'camera', dataConfiavel: true } as never);
+    await b.sync.sincronizar();
+    const lista = await b.dados.listarAnotacoes('ubs');
+    expect(lista.map((x) => x.texto)).toEqual(['Reboco']);
+    expect(await b.armazenamento.fotos.obter('../x')).toBeUndefined();
+  });
+});
