@@ -94,3 +94,14 @@ Para quem usa iPhone (ou computador), há uma versão web que funciona como o ap
 - **Instalar no iPhone:** Safari → Compartilhar → **Adicionar à Tela de Início**. O passo `scripts/pwa.mjs` grava o manifesto e os ícones (`public/icones/`, gerados de `assets/icon.png`).
 - **Offline:** os dados e as fotos ficam no navegador (IndexedDB, `src/storage/abrir.web.ts`) e sobem quando há internet. O iPhone pode apagar os dados de sites que ficam muitas semanas sem uso; por isso, sincronize antes de deixar o app parado. Fotos são reduzidas a 1600 px.
 - **PDF:** abre a impressão do navegador; escolha "Salvar como PDF" ou compartilhar.
+
+## Versão web no Cloudflare Pages (repositório privado)
+O GitHub Pages gratuito só funciona com repositório público. Para deixar o repositório privado sem perder a versão web e o atalho do iPhone, publique no Cloudflare Pages (grátis). Cada app fica num endereço próprio (ex.: `https://passos-rdo.pages.dev`).
+
+1. Crie uma conta grátis em dash.cloudflare.com.
+2. **Chave de acesso:** ícone do perfil → *My Profile* → *API Tokens* → *Create Token* → *Create Custom Token*. Em *Permissions*, escolha *Account* · *Cloudflare Pages* · *Edit*. Crie e copie a chave (ela aparece uma vez só).
+3. **Identificador da conta:** em *Workers & Pages*, copie o *Account ID* mostrado na lateral.
+4. No GitHub, neste repositório: *Settings → Secrets and variables → Actions → New repository secret*: `CLOUDFLARE_API_TOKEN` (a chave) e `CLOUDFLARE_ACCOUNT_ID` (o identificador).
+5. *Actions → Publicar versão web (Cloudflare Pages) → Run workflow*. O endereço aparece no fim do log. Se o nome estiver ocupado, crie a variável `CF_PROJETO` (*Variables → New repository variable*) com outro nome e rode de novo.
+6. **iPhone:** abra o endereço novo no Safari, entre com seu login, toque em *Compartilhar → Adicionar à Tela de Início* e apague o atalho antigo. Antes de trocar, abra o atalho antigo com internet e espere o app enviar o que estiver pendente: o que ficou só no navegador antigo não passa para o endereço novo.
+7. Só depois: *Settings → General → Change repository visibility → Private* e, em *Settings → Pages*, desative o site antigo (pode apagar a ramificação `gh-pages`).
