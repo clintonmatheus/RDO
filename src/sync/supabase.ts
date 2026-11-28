@@ -74,18 +74,32 @@ export class RemotoSupabase implements Remoto {
     return baixarFoto(data.signedUrl, f.id);
   }
 
+  /**
+   * O que o servidor confere (RLS) são as colunas da linha; o conteúdo (dados) é JSON livre. Por isso a identidade, a obra,
+   * o dia, o autor e a exclusão vêm sempre das colunas, e nunca do conteúdo.
+   */
+  private static daLinha(tabela: string, l: Record<string, unknown>): unknown {
+    const d = (l.dados && typeof l.dados === 'object' ? l.dados : {}) as Record<string, unknown>;
+    if (tabela === 'registros') return { ...d, id: `${l.obra_id}|${l.data}`, obraId: l.obra_id, data: l.data };
+    const base = { ...d, id: l.id, obraId: l.obra_id, data: l.data, autorId: l.autor_id, excluida: !!l.excluida };
+    return tabela === 'fotos' ? { ...base, caminhoRemoto: (l.caminho as string | null) ?? undefined } : base;
+  }
+
   private async baixar<T>(tabela: string, cursor?: string): Promise<Lote<T>> {
     const desde = cursor ? new Date(Date.parse(cursor) - SOBREPOSICAO_MS).toISOString() : '1970-01-01T00:00:00Z';
     const itens: T[] = [];
     let ultimo = cursor;
     for (let pagina = 0; ; pagina++) {
-      const { data, error } = await this.sb.from(tabela).select('dados, servidor_em')
+      const colunas = tabela === 'registros' ? 'obra_id, data, dados, servidor_em'
+        : `id, obra_id, data, autor_id, excluida, ${tabela === 'fotos' ? 'caminho, ' : ''}dados, servidor_em`;
+      const { data, error } = await this.sb.from(tabela).select(colunas)
         .gt('servidor_em', desde).order('servidor_em', { ascending: true })
         .range(pagina * PAGINA, pagina * PAGINA + PAGINA - 1);
       if (error) throw erroDeRede(error);
-      for (const l of data ?? []) {
-        itens.push(l.dados as T);
-        if (!ultimo || l.servidor_em > ultimo) ultimo = l.servidor_em;
+      for (const l of (data ?? []) as unknown as Record<string, unknown>[]) {
+        itens.push(RemotoSupabase.daLinha(tabela, l) as T);
+        const em = l.servidor_em as string;
+        if (!ultimo || em > ultimo) ultimo = em;
       }
       if (!data || data.length < PAGINA) break;
     }

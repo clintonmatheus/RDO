@@ -18,7 +18,7 @@ export class RepositorioRegistrosMemoria implements RepositorioRegistros {
   async listar(obraId: string, de?: string, ate?: string) {
     return [...this.dados.values()]
       .filter((r) => r.obraId === obraId && noPeriodo(r.data, de, ate))
-      .sort((a, b) => a.data.localeCompare(b.data))
+      .sort((a, b) => (a.data ?? '').localeCompare(b.data ?? ''))
       .map(clonar);
   }
 }
@@ -38,7 +38,7 @@ export class RepositorioFotosMemoria implements RepositorioFotos {
   }
   private visiveis(filtro: (f: Foto) => boolean) {
     return [...this.dados.values()].filter((f) => !f.excluida && filtro(f))
-      .sort((a, b) => a.capturadaEm.localeCompare(b.capturadaEm)).map(clonar);
+      .sort((a, b) => (a.capturadaEm ?? '').localeCompare(b.capturadaEm ?? '')).map(clonar);
   }
 }
 
@@ -52,7 +52,7 @@ export class RepositorioAnotacoesMemoria implements RepositorioAnotacoes {
   async listar(obraId: string, de?: string, ate?: string) {
     return [...this.dados.values()]
       .filter((a) => !a.excluida && a.obraId === obraId && noPeriodo(a.data, de, ate))
-      .sort((a, b) => a.criadaEm.localeCompare(b.criadaEm)).map(clonar);
+      .sort((a, b) => (a.criadaEm ?? '').localeCompare(b.criadaEm ?? '')).map(clonar);
   }
 }
 

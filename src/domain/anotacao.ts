@@ -61,7 +61,7 @@ export function excluirAnotacao(a: Anotacao, usuario: Usuario, agora: string): A
 }
 
 export function anotacoesVisiveis(lista: Anotacao[]): Anotacao[] {
-  return lista.filter((a) => !a.excluida).sort((x, y) => x.criadaEm.localeCompare(y.criadaEm));
+  return lista.filter((a) => !a.excluida).sort((x, y) => (x.criadaEm ?? '').localeCompare(y.criadaEm ?? ''));
 }
 
 /** Texto exibido abaixo da anotação quando ela foi editada. */

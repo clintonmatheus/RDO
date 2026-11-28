@@ -1,6 +1,7 @@
 import type { Foto } from '../domain/foto';
 import type { Armazenamento, TipoPendencia } from '../storage/contrato';
 import type { Lote, Remoto } from './remoto';
+import { anotacaoValida, fotoValida, registroValido } from './validar';
 
 export interface ResultadoSync { enviados: number; recebidos: number }
 
@@ -87,11 +88,12 @@ export class Sincronizador {
   private async aplicar<T>(
     tabela: string, tipo: TipoPendencia, baixar: (c?: string) => Promise<Lote<T>>,
     chave: (x: T) => string, obterLocal: (x: T) => Promise<T | undefined>, salvar: (x: T, local?: T) => Promise<void>,
-    comparavel: (x: T) => unknown = (x) => x,
+    valido: (x: unknown) => boolean, comparavel: (x: T) => unknown = (x) => x,
   ): Promise<number> {
     const lote = await baixar(await this.a.cursores.obter(tabela));
     let mudou = 0;
     for (const item of lote.itens) {
+      if (!valido(item)) continue; // item malformado no servidor: ignorado para não travar o aparelho
       if (await this.a.fila.contem(tipo, chave(item))) continue; // alteração local pendente prevalece
       const local = await obterLocal(item);
       if (local && JSON.stringify(comparavel(local)) === JSON.stringify(comparavel(item))) continue;
@@ -104,12 +106,12 @@ export class Sincronizador {
 
   private async receber(): Promise<number> {
     const r = await this.aplicar('registros', 'registro', (c) => this.remoto.baixarRegistros(c), (x) => x.id,
-      (x) => this.a.registros.obter(x.obraId, x.data), (x) => this.a.registros.salvar(x));
+      (x) => this.a.registros.obter(x.obraId, x.data), (x) => this.a.registros.salvar(x), registroValido);
     const n = await this.aplicar('anotacoes', 'anotacao', (c) => this.remoto.baixarAnotacoes(c), (x) => x.id,
-      (x) => this.a.anotacoes.obter(x.id), (x) => this.a.anotacoes.salvar(x));
+      (x) => this.a.anotacoes.obter(x.id), (x) => this.a.anotacoes.salvar(x), anotacaoValida);
     const f = await this.aplicar('fotos', 'foto', (c) => this.remoto.baixarFotos(c), (x) => x.id,
       (x) => this.a.fotos.obter(x.id), (x: Foto, local?: Foto) => this.a.fotos.salvar({ ...x, uri: local?.uri ?? '' }),
-      (x: Foto) => ({ ...x, uri: '' }));
+      fotoValida, (x: Foto) => ({ ...x, uri: '' }));
     return r + n + f;
   }
 

@@ -44,7 +44,7 @@ export function montarDias(
     const base = {
       data: d,
       diaSemana: diaDaSemana(d),
-      fotos: fotos.filter((f) => f.obraId === obra.id && f.data === d).sort((a, b) => a.capturadaEm.localeCompare(b.capturadaEm)),
+      fotos: fotos.filter((f) => f.obraId === obra.id && f.data === d).sort((a, b) => (a.capturadaEm ?? '').localeCompare(b.capturadaEm ?? '')),
     };
     const notas = visiveis.filter((a) => a.data === d).map((a) => a.texto);
     const padrao = motivoPadraoSemExpediente(d);
