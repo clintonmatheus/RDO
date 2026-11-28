@@ -98,3 +98,23 @@ describe('montarDiarioCbtu (período livre)', () => {
     expect(() => montarDiarioCbtu(cbtu, { inicio: '2025-01-01', fim: '2026-12-31' }, [], [])).toThrow('Período muito longo');
   });
 });
+
+describe('diarioCbtuHtml com dados adulterados no servidor', () => {
+  // O servidor aceita qualquer JSON em "dados": um texto no lugar de um número não pode virar HTML no PDF.
+  const ataque = '<img src=x onerror=alert(1)>';
+  const r = criarRegistroDiario({ obraId: cbtu.id, data: '2026-11-05', efetivo: { Servente: 2 }, equipamentos: { Betoneira: 1 } });
+  const adulterado = {
+    ...r,
+    efetivo: { ...r.efetivo, Pedreiro: ataque as unknown as number },
+    equipamentos: { ...r.equipamentos, Andaime: ataque as unknown as number },
+  };
+  const html = diarioCbtuHtml(montarDiarioMensal(cbtu, '2026-11-20', [adulterado], []), (f) => f.uri);
+
+  it('não insere o texto como HTML e ignora a quantidade inválida', () => {
+    expect(html).not.toContain('<img src=x');
+    expect(html).not.toContain('onerror');
+    expect(html).toMatch(/<td class="n">2<\/td>/); // total só com a quantidade válida
+    expect(html).toContain('Betoneira: 1');
+    expect(html).not.toContain('Andaime');
+  });
+});

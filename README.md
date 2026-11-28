@@ -63,6 +63,8 @@ Pasta `supabase/`:
 2. Crie os usuários em **Authentication → Users → Add user** (marque *Auto Confirm User*).
 3. `002_administrador.sql` — marca o administrador (troque o e-mail).
 4. `003_nomes_dos_usuarios.sql` — nomes exibidos nas anotações.
+5. `004_auditoria_e_fotos.sql` — auditoria (guarda a versão anterior de cada alteração, consultas prontas no fim do arquivo) e só o autor ou o administrador substitui o arquivo de uma foto. Se rodar a `001` de novo, rode a `004` depois.
+6. Em **Authentication → Sign In / Providers**, desligue **Allow new users to sign up**: os logins são criados só por você, em Authentication → Users.
 
 Regras: todos veem todas as obras; registro do dia (efetivo/equipamentos/ritmo) pode ser alterado por qualquer usuário (fica "editado por"); anotações e fotos só podem ser alteradas/excluídas pelo autor ou pelo administrador.
 
@@ -76,13 +78,13 @@ Quem monta o relatório fotográfico escolhe as fotos no computador.
 
 ## Cópia diária dos dados (backup)
 
-- **O que faz** (`.github/workflows/backup.yml`): todo dia às 03:17 (Brasília) acessa o Supabase, copia as tabelas (`registros`, `anotacoes`, lista de `fotos`, `perfis`) e os logins (sem senhas), criptografa (AES-256) e guarda como artefato por 90 dias. As fotos em si ficam só no Supabase. O acesso diário também **mantém o projeto gratuito ativo** (o Supabase pausa projetos sem uso por 7 dias).
+- **O que faz** (`.github/workflows/backup.yml`): todo dia às 03:17 (Brasília) acessa o Supabase, copia as tabelas (`registros`, `anotacoes`, lista de `fotos`, `perfis`, `auditoria`) e os logins (sem senhas), criptografa (AES-256) e guarda como artefato por 90 dias. **Aos domingos** (ou em Run workflow marcando *Copiar também os arquivos das fotos*) copia também os arquivos das fotos, numa cópia separada `rdo-fotos-AAAA-MM-DD` guardada por 14 dias. O acesso diário também **mantém o projeto gratuito ativo** (o Supabase pausa projetos sem uso por 7 dias).
 - **Segredos** (Settings → Secrets and variables → Actions → New repository secret):
   - `SUPABASE_SERVICE_KEY`: chave secreta do projeto do RDO (Project Settings → API Keys → Secret key). Nunca vai para o app.
   - `BACKUP_SENHA`: senha com 12 caracteres ou mais para abrir as cópias; guarde-a fora do GitHub.
 - **Rodar na hora:** Actions → Cópia diária dos dados → Run workflow.
 - **Abrir uma cópia:** baixe o artefato e rode `node scripts/backup/abrir.mjs rdo-backup-AAAA-MM-DD.tar.gz.enc`; descompacte o `.tar.gz`.
-- **Restaurar:** `node scripts/backup/restaurar.mjs sql <pasta> > restaurar.sql` e rode no SQL Editor (grava por cima pela chave, não apaga nada; só entram linhas de logins que existem).
+- **Restaurar:** `node scripts/backup/restaurar.mjs sql <pasta> > restaurar.sql` e rode no SQL Editor (grava por cima pela chave, não apaga nada; só entram linhas de logins que existem). Fotos: `SUPABASE_URL=… SUPABASE_SERVICE_KEY=… node scripts/backup/restaurar.mjs arquivos <pasta-da-cópia-das-fotos>`.
 - Testes: `npm run test:backup`.
 
 ## Versão web e iPhone (atalho na tela inicial)

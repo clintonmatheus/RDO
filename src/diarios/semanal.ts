@@ -3,7 +3,7 @@ import { anotacoesVisiveis, type Anotacao } from '../domain/anotacao';
 import type { Foto } from '../domain/foto';
 import type { Obra } from '../domain/obras';
 import {
-  EQUIPAMENTOS, FUNCOES, totalEfetivo, type Equipamento, type Funcao, type RegistroDiario, type Ritmo,
+  EQUIPAMENTOS, FUNCOES, quantidadeSegura, totalEfetivo, type Equipamento, type Funcao, type RegistroDiario, type Ritmo,
 } from '../domain/registro';
 
 export interface DiaDoDiario {
@@ -60,8 +60,9 @@ export function montarDias(
         status: r.semExpediente ? 'sem-expediente' : 'registrado',
         motivo: r.semExpediente?.motivo,
         efetivoTotal: totalEfetivo(r),
-        efetivo: FUNCOES.filter((f) => r.efetivo[f] > 0).map((funcao) => ({ funcao, quantidade: r.efetivo[funcao] })),
-        equipamentos: EQUIPAMENTOS.filter((e) => r.equipamentos[e] > 0).map((equipamento) => ({ equipamento, quantidade: r.equipamentos[equipamento] })),
+        efetivo: FUNCOES.map((funcao) => ({ funcao, quantidade: quantidadeSegura(r.efetivo?.[funcao]) })).filter((e) => e.quantidade > 0),
+        equipamentos: EQUIPAMENTOS.map((equipamento) => ({ equipamento, quantidade: quantidadeSegura(r.equipamentos?.[equipamento]) }))
+          .filter((e) => e.quantidade > 0),
         ritmo: r.ritmo,
         anotacoes: notas,
       });
@@ -70,7 +71,8 @@ export function montarDias(
   return dias;
 }
 
-export const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+/** Escapa qualquer valor (texto, número ou dado inesperado vindo do servidor) antes de entrar no HTML. */
+export const esc = (v: unknown) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 export function diarioSemanalHtml(diario: DiarioSemanal, srcDaFoto: (f: Foto) => string): string {
   const { obra, periodo, dias } = diario;
@@ -78,10 +80,10 @@ export function diarioSemanalHtml(diario: DiarioSemanal, srcDaFoto: (f: Foto) =>
     const titulo = `<h3>${esc(d.diaSemana)} · ${formatarDataBR(d.data)}</h3>`;
     if (d.status === 'sem-registro') return `<section>${titulo}<p class="suave">Sem registro.</p>${fotosHtml(d)}</section>`;
     if (d.status === 'sem-expediente') return `<section>${titulo}<p>Sem expediente: ${esc(d.motivo ?? '')}</p>${fotosHtml(d)}</section>`;
-    const efetivo = d.efetivo.map((e) => `${esc(e.funcao)}: ${e.quantidade}`).join(' · ');
-    const equip = d.equipamentos.map((e) => `${esc(e.equipamento)}: ${e.quantidade}`).join(' · ');
+    const efetivo = d.efetivo.map((e) => `${esc(e.funcao)}: ${esc(e.quantidade)}`).join(' · ');
+    const equip = d.equipamentos.map((e) => `${esc(e.equipamento)}: ${esc(e.quantidade)}`).join(' · ');
     const detalhes = obra.controlaEfetivo
-      ? `<p><b>Efetivo (${d.efetivoTotal}):</b> ${efetivo || '—'}</p>
+      ? `<p><b>Efetivo (${esc(d.efetivoTotal)}):</b> ${efetivo || '—'}</p>
 ${equip ? `<p><b>Equipamentos:</b> ${equip}</p>` : ''}
 <p><b>Ritmo:</b> ${esc(d.ritmo ?? '')}</p>`
       : '';

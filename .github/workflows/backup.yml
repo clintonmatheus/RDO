@@ -1,7 +1,9 @@
 name: Cópia diária dos dados (backup)
 
 # Todo dia às 03:17 (Brasília): acessa o Supabase (o que também mantém o projeto gratuito ativo),
-# copia as tabelas do diário e os logins (as fotos ficam só no Supabase), criptografa com senha e guarda por 90 dias.
+# copia as tabelas do diário, a auditoria e os logins, criptografa com senha e guarda por 90 dias.
+# Aos domingos (ou quando pedido em "Run workflow") também copia os arquivos das fotos, numa cópia separada
+# guardada por 14 dias (são grandes; duas semanas de cópias bastam para recuperar um arquivo perdido).
 # Segredos necessários (Settings → Secrets and variables → Actions → New repository secret):
 #   SUPABASE_SERVICE_KEY  chave secreta do Supabase (Project Settings → API Keys → Secret keys)
 #   BACKUP_SENHA          senha para abrir as cópias (guarde-a fora do GitHub)
@@ -10,6 +12,11 @@ on:
   schedule:
     - cron: '17 6 * * *'
   workflow_dispatch:
+    inputs:
+      fotos:
+        description: 'Copiar também os arquivos das fotos'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -39,8 +46,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      # Versão fixa e conferida pelo package-lock: esta tarefa roda com a chave secreta do Supabase.
       - name: Instalar só o cliente do Supabase
-        run: cd scripts/backup && npm init -y >/dev/null && npm install --no-audit --no-fund @supabase/supabase-js@2 >/dev/null
+        run: npm ci --prefix scripts/backup --no-audit --no-fund --ignore-scripts >/dev/null
       - name: Testar o script de cópia
         run: node --test scripts/backup/backup.test.mjs
       - name: Copiar os dados
@@ -58,6 +66,27 @@ jobs:
           name: rdo-backup-${{ env.DATA }}
           path: rdo-backup-*.tar.gz.enc
           retention-days: 90
+          if-no-files-found: error
+      - name: Decidir se copia as fotos (domingo ou quando pedido)
+        id: fotos
+        env:
+          PEDIDO: ${{ github.event.inputs.fotos }}
+        run: |
+          if [ "$PEDIDO" = "true" ] || [ "$(TZ=America/Sao_Paulo date +%u)" = "7" ]; then echo "copiar=sim" >> "$GITHUB_OUTPUT"; fi
+      - name: Copiar e criptografar as fotos
+        if: steps.fotos.outputs.copiar == 'sim'
+        run: |
+          node scripts/backup/backup.mjs fotos fotos
+          tar czf fotos.tar.gz fotos
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in fotos.tar.gz -out "rdo-fotos-$DATA.tar.gz.enc" -pass env:BACKUP_SENHA
+          rm -rf fotos fotos.tar.gz
+          ls -lh "rdo-fotos-$DATA.tar.gz.enc"
+      - uses: actions/upload-artifact@v4
+        if: steps.fotos.outputs.copiar == 'sim'
+        with:
+          name: rdo-fotos-${{ env.DATA }}
+          path: rdo-fotos-*.tar.gz.enc
+          retention-days: 14
           if-no-files-found: error
       - name: Manter o agendamento ativo
         if: always()

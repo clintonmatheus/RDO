@@ -3,7 +3,7 @@ import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { fazerBackup } from './backup.mjs';
+import { fazerBackup, fazerBackupFotos } from './backup.mjs';
 import { gerarSql } from './restaurar.mjs';
 
 /** Supabase de mentira: tabelas em memória, ordenadas pela ordem em que as colunas são pedidas. */
@@ -38,7 +38,7 @@ test('backup grava as tabelas (inclusive a de chave composta) e os logins; tabel
   const r = await fazerBackup(sb, pasta, new Date('2026-11-26T06:17:00Z'));
   assert.equal(r.tabelas.anotacoes, 2300);
   assert.equal(r.tabelas.registros, 1);
-  assert.deepEqual(r.ausentes, ['fotos']);
+  assert.deepEqual(r.ausentes, ['fotos', 'auditoria']);
   assert.equal(r.usuarios, 1);
   assert.equal(JSON.parse(await readFile(join(pasta, 'dados', 'anotacoes.json'), 'utf8')).length, 2300);
 
@@ -60,4 +60,24 @@ test('abrir.mjs descriptografa o que o openssl da tarefa agendada gera', async (
   const bytes = await readFile(join(pasta, 'x.enc'));
   assert.equal(descriptografar(bytes, 'senha forte 123').toString(), 'conteúdo da cópia');
   assert.throws(() => descriptografar(bytes, 'errada'), /Senha errada/);
+});
+
+test('cópia das fotos baixa os arquivos das pastas e ignora nomes que sairiam da pasta da cópia', async () => {
+  const arquivos = { 'cbtu/f1.jpg': 'foto 1', 'ubs/f2.jpg': 'foto 2', '../fora.jpg': 'x' };
+  const sb = {
+    storage: {
+      from: () => ({
+        list: async (prefixo) => {
+          if (prefixo === '') return { data: [{ name: 'cbtu', id: null }, { name: 'ubs', id: null }, { name: '../fora.jpg', id: 'z' }], error: null };
+          return { data: Object.keys(arquivos).filter((c) => c.startsWith(`${prefixo}/`)).map((c) => ({ name: c.slice(prefixo.length + 1), id: c })), error: null };
+        },
+        download: async (c) => ({ data: new Blob([arquivos[c]]), error: null }),
+      }),
+    },
+  };
+  const pasta = await mkdtemp(join(tmpdir(), 'bkf-'));
+  const r = await fazerBackupFotos(sb, pasta);
+  assert.equal(r.arquivos, 2);
+  assert.deepEqual(r.ignorados, ['../fora.jpg']);
+  assert.equal(await readFile(join(pasta, 'arquivos', 'cbtu', 'f1.jpg'), 'utf8'), 'foto 1');
 });
